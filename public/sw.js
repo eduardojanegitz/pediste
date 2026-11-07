@@ -7,8 +7,8 @@ self.addEventListener("push", (event) => {
   event.waitUntil(
     self.registration.showNotification("Seu pedido está pronto! 🎉", {
       body: "Pode retirar. Toque para abrir o PedeAí!.",
-      icon: "/favicon.svg",
-      badge: "/favicon.svg",
+      icon: "/icons/icon-192.png",
+      badge: "/icons/icon-192.png",
       tag: "pedeai-ready",
       renotify: true,
       vibrate: [200, 100, 200],

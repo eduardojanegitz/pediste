@@ -36,6 +36,7 @@ O `.env` não é versionado. A `SUPABASE_SERVICE_ROLE_KEY` é injetada pelo Lova
 
 - `supabase/setup.sql` — estrutura-base para um projeto Supabase novo.
 - `supabase/migrations/` — alterações incrementais, em ordem de nome. Todas são aditivas (não apagam dados). **Rode-as manualmente no SQL Editor, na ordem**. Nenhuma é aplicada automaticamente.
+- `scripts/sql-tests/` — testa o `setup.sql` e todas as migrações em um Postgres local (PGlite); veja o README da pasta.
 - `supabase/first-admin.sql` e `docs/ADMIN.md` — como criar o primeiro administrador (desative o cadastro público antes).
 - `src/integrations/supabase/types.ts` foi ajustado à mão para as migrações; o Lovable pode regenerá-lo.
 
@@ -54,7 +55,7 @@ O `.env` não é versionado. A `SUPABASE_SERVICE_ROLE_KEY` é injetada pelo Lova
 - Cancelar um pedido não incrementa a versão dele.
 - A animação foi testada em navegador de computador; falta testar em celular real de entrada.
 - O efeito cinematográfico "produto escolhido voa para o resumo" não foi feito (existe só o efeito simples).
-- Aviso push: não testado em aparelho real (Android/iPhone) nem com os serviços de push de verdade; o iPhone exige o app instalado. Não há ícone PNG (só SVG) para a tela inicial.
+- Aviso push: não testado em aparelho real (Android/iPhone) nem com os serviços de push de verdade; o iPhone exige o app instalado. Os ícones PNG da tela inicial (`public/icons/`) foram gerados a partir do `favicon.svg`.
 - Horário sempre de Brasília (UTC-3 fixo, sem horário de verão desde 2019).
 - Produtos sem categoria não aparecem no cardápio até serem atribuídos.
 - Fotos exigem URL assinada (bucket privado), gerada pelo servidor.
