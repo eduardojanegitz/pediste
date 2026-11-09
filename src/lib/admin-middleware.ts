@@ -43,3 +43,13 @@ export const requireAdmin = createMiddleware({ type: "function" })
       context: { adminId: context.userId, isSuper: data.is_super, establishmentIds },
     });
   });
+
+/** Como `requireAdmin`, mas só para o super administrador (gestão de estabelecimentos e acessos). */
+export const requireSuperAdmin = createMiddleware({ type: "function" })
+  .middleware([requireAdmin])
+  .server(({ next, context }) => {
+    if (!context.isSuper) {
+      throw new Error("Forbidden: só o super administrador pode fazer isso.");
+    }
+    return next();
+  });

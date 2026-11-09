@@ -21,7 +21,7 @@ const code = async (p) => {
 const id = (x) => `00000000-0000-0000-0000-000000000${x}`;
 
 await db.exec(`CREATE ROLE anon; CREATE ROLE authenticated; CREATE ROLE service_role;
-CREATE SCHEMA auth; CREATE TABLE auth.users (id uuid PRIMARY KEY DEFAULT gen_random_uuid());
+CREATE SCHEMA auth; CREATE TABLE auth.users (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), email text);
 CREATE SCHEMA storage; CREATE TABLE storage.buckets (id text PRIMARY KEY, name text, public boolean, file_size_limit int, allowed_mime_types text[]);`);
 await db.exec(fs.readFileSync(path.join(root, "setup.sql"), "utf8"));
 
@@ -93,6 +93,18 @@ ok((await q("SELECT id FROM get_active_round_for($1)", [DEF])).length === 1, "e 
 await db.exec(`UPDATE rounds SET status = 'open', closed_at = NULL WHERE id = '${id("f02")}'`);
 const gr = await q(`SELECT grantee FROM information_schema.routine_privileges WHERE routine_name = 'get_active_round_for' AND grantee IN ('anon','authenticated','PUBLIC')`);
 ok(gr.length === 0, "anon/authenticated não executam get_active_round_for");
+
+// C3c: achar usuário pelo e-mail.
+const mig3 = fs.readFileSync(path.join(root, "migrations", files[last + 2]), "utf8");
+await db.exec(mig3);
+await db.exec(mig3); // idempotente
+await db.exec(`INSERT INTO auth.users (id, email) VALUES ('${id("a21")}', 'Maria@Exemplo.com')`);
+ok((await q("SELECT find_user_id_by_email($1) AS u", ["maria@exemplo.com"]))[0].u === id("a21"), "acha por e-mail (maiúsculas não importam)");
+ok((await q("SELECT find_user_id_by_email($1) AS u", ["  MARIA@exemplo.com "]))[0].u === id("a21"), "ignora espaços nas pontas");
+ok((await q("SELECT find_user_id_by_email($1) AS u", ["outra@exemplo.com"]))[0].u === null, "e-mail desconhecido devolve vazio");
+ok((await q("SELECT find_user_id_by_email($1) AS u", [""]))[0].u === null, "e-mail vazio devolve vazio");
+const fg = await q(`SELECT grantee FROM information_schema.routine_privileges WHERE routine_name = 'find_user_id_by_email' AND grantee IN ('anon','authenticated','PUBLIC')`);
+ok(fg.length === 0, "anon/authenticated não executam find_user_id_by_email");
 
 // submit_order: escopo do estabelecimento.
 await db.exec(`

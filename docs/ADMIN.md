@@ -31,7 +31,14 @@ Cada estabelecimento tem o seu cardápio e as suas rodadas (a migração `202611
 - **Administrador comum**: só vê os estabelecimentos em que está vinculado (`public.admin_establishments`).
 - A conferência é feita no servidor em toda função do painel; esconder o seletor no navegador não é a proteção.
 
-Enquanto a tela de gestão não existe (próximo bloco), faça pelo SQL Editor:
+**Pela tela (recomendado):** o super administrador vê a aba **Estabelecimentos**. Nela ele cria estabelecimentos (nome e apelido do endereço), renomeia (o apelido não muda, porque os links compartilhados dependem dele) e libera ou remove administradores pelo e-mail.
+
+- A conta do administrador precisa **já existir** no Supabase (Authentication > Users). O app não cria contas nem guarda senhas.
+- Quem ainda não era administrador passa a ser administrador **comum** (só vê os estabelecimentos liberados). Quem já era mantém o papel. Virar super continua sendo feito pelo SQL (`UPDATE public.admins SET is_super = true WHERE user_id = ...`).
+- Remover o acesso não apaga a conta nem os dados do estabelecimento.
+- Exige a migração `20261109000300_find_user_by_email.sql`.
+
+**Pelo SQL Editor** (alternativa, ou se a tela não estiver disponível):
 
 ```sql
 -- novo estabelecimento

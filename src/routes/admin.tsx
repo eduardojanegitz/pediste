@@ -48,6 +48,11 @@ const tabs = [
   { to: "/admin/settings", label: "Ajustes", exact: false },
 ] as const;
 
+/** Abas só do super administrador (o servidor também confere; esconder aqui é só conforto). */
+const superTabs = [
+  { to: "/admin/establishments", label: "Estabelecimentos", exact: false },
+] as const;
+
 function AdminLayout() {
   const { adminEmail, isSuper, establishments } = Route.useRouteContext();
   const router = useRouter();
@@ -106,7 +111,7 @@ function AdminLayout() {
         </div>
       </header>
       <nav aria-label="Seções do painel" className="mb-8 flex gap-2 overflow-x-auto">
-        {tabs.map((t) => (
+        {[...tabs, ...(isSuper ? superTabs : [])].map((t) => (
           <Link
             key={t.to}
             to={t.to}

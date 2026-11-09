@@ -466,6 +466,10 @@ export type Database = {
           status: string;
         }[];
       };
+      find_user_id_by_email: {
+        Args: { p_email: string };
+        Returns: string | null;
+      };
       get_active_round_for: {
         Args: { p_establishment: string };
         Returns: {
