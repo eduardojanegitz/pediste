@@ -45,6 +45,11 @@ export type AdminRound = Round & {
 export type ActiveRound = Round & { server_now: string };
 
 const tokenSchema = z.string().min(32).max(128);
+/** Endereço público opcional: sem apelido = estabelecimento padrão. Aceita chamada sem argumento. */
+const publicSlugSchema = z
+  .object({ slug: z.string().max(40).optional() })
+  .optional()
+  .transform((v) => v ?? {});
 
 // Mesma regra de public.round_state(), com o relógio do servidor (usada só para listagens do admin).
 function roundState(
@@ -60,10 +65,14 @@ function roundState(
 // ---------- Rodadas ----------
 
 /** Rodada atual (status 'open') com o estado calculado pelo relógio do banco. `null` = nenhuma rodada. */
-export const getActiveRound = createServerFn({ method: "GET" }).handler(
-  async (): Promise<ActiveRound | null> => {
+export const getActiveRound = createServerFn({ method: "GET" })
+  .validator((d: unknown) => publicSlugSchema.parse(d))
+  .handler(async ({ data: input }): Promise<ActiveRound | null> => {
     const db = await admin();
-    const { data, error } = await db.rpc("get_active_round");
+    const { resolveEstablishment } = await import("@/lib/establishment.server");
+    const est = await resolveEstablishment(db, input.slug);
+    if (!est) return null;
+    const { data, error } = await db.rpc("get_active_round_for", { p_establishment: est.id });
     if (error) {
       console.error(error);
       throw new Error("Não foi possível carregar a rodada.");
@@ -76,8 +85,7 @@ export const getActiveRound = createServerFn({ method: "GET" }).handler(
           state: r.state as RoundState,
         } satisfies ActiveRound)
       : null;
-  },
-);
+  });
 
 export const listRounds = createServerFn({ method: "GET" })
   .middleware([requireAdmin])
@@ -277,9 +285,23 @@ export const getLastOrder = createServerFn({ method: "POST" })
     const db = await admin();
     const found = await findParticipant(db, data.token);
     if (!found) return null;
+    // "O de sempre" vale só dentro do mesmo estabelecimento da rodada atual (sem rodada, o padrão).
+    let est: string | undefined;
+    if (data.roundId) {
+      const { establishmentOfRound } = await import("@/lib/scope.server");
+      est = await establishmentOfRound(db, data.roundId).catch(() => undefined);
+    }
+    if (!est) {
+      const { resolveEstablishment } = await import("@/lib/establishment.server");
+      est = (await resolveEstablishment(db, undefined))?.id;
+    }
+    if (!est) return null;
     let q = db
       .from("orders")
-      .select("updated_at, rounds(name), order_items(product_id, quantity, note, products(name))")
+      .select(
+        "updated_at, rounds!inner(name, establishment_id), order_items(product_id, quantity, note, products(name))",
+      )
+      .eq("rounds.establishment_id", est)
       .eq("participant_id", found.id)
       .eq("status", "confirmed")
       .order("updated_at", { ascending: false })

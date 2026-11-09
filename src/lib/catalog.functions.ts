@@ -43,18 +43,6 @@ export type CatalogProduct = {
 export type MenuCategory = CatalogCategory;
 export type MenuProduct = CatalogProduct;
 
-/** Estabelecimento padrão (o participante só enxerga ele até o C3b). */
-async function defaultEstablishmentId() {
-  const db = await admin();
-  const { data } = await db
-    .from("establishments")
-    .select("id")
-    .eq("is_default", true)
-    .maybeSingle();
-  if (!data) throw new Error("Não foi possível carregar o cardápio.");
-  return data.id;
-}
-
 async function loadCatalog(onlyActive: boolean, establishmentId: string) {
   const db = await admin();
   let catQ = db
@@ -95,9 +83,21 @@ async function loadCatalog(onlyActive: boolean, establishmentId: string) {
 }
 
 /** Cardápio dos participantes: só categorias e produtos ativos. Público. */
-export const getMenu = createServerFn({ method: "GET" }).handler(async () =>
-  loadCatalog(true, await defaultEstablishmentId()),
-);
+export const getMenu = createServerFn({ method: "GET" })
+  .validator((d: unknown) =>
+    z
+      .object({ slug: z.string().max(40).optional() })
+      .optional()
+      .transform((v) => v ?? {})
+      .parse(d),
+  )
+  .handler(async ({ data }) => {
+    const db = await admin();
+    const { resolveEstablishment } = await import("@/lib/establishment.server");
+    const est = await resolveEstablishment(db, data.slug);
+    if (!est) throw new Error("Estabelecimento não encontrado.");
+    return loadCatalog(true, est.id);
+  });
 
 /** Catálogo completo (inclui inativos) para o painel. Somente administradores. */
 export const getCatalog = createServerFn({ method: "GET" })

@@ -45,4 +45,4 @@ SELECT u.id, e.id FROM auth.users u, public.establishments e
 WHERE u.email = 'pessoa@exemplo.com' AND e.slug = 'padaria-do-ze' ON CONFLICT DO NOTHING;
 ```
 
-Por enquanto o participante só enxerga o estabelecimento **Padrão** (endereço `/`); os outros ficam disponíveis para o participante no próximo bloco.
+O participante abre o estabelecimento **Padrão** em `/` e os demais em `/e/<apelido>` (o apelido é o `slug` do estabelecimento).

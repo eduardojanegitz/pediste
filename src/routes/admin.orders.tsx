@@ -40,6 +40,7 @@ import {
   useEstablishment,
 } from "@/features/admin/establishment-context";
 import { ShareDialog } from "@/features/admin/ShareDialog";
+import { participantPath } from "@/lib/scope";
 import {
   consolidate,
   emptyFilters,
@@ -275,7 +276,7 @@ function OrdersPage() {
         </div>
       ) : orders.length === 0 ? (
         <>
-          {round && <PendingCard round={round} />}
+          {round && <PendingCard round={round} path={participantPath(current)} />}
           <div className="pop-card p-10 text-center">
             <h2 className="text-4xl">Sem pedidos ainda</h2>
             <p className="mt-2 text-muted-foreground">Os pedidos confirmados aparecem aqui.</p>
@@ -541,7 +542,14 @@ function OrdersPage() {
         </>
       )}
 
-      {round && <ShareDialog open={shareOpen} onOpenChange={setShareOpen} round={round} />}
+      {round && (
+        <ShareDialog
+          open={shareOpen}
+          onOpenChange={setShareOpen}
+          round={round}
+          path={participantPath(current)}
+        />
+      )}
       {round && <BoardLinkDialog open={boardOpen} onOpenChange={setBoardOpen} round={round} />}
       {round && (
         <PrintDialog

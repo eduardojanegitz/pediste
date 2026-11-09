@@ -11,7 +11,7 @@ import { btnPlain, btnPrimary, field } from "./ui";
 type PendingRound = { id: string; name: string; state: string; closes_at: string | null };
 
 /** "Quem ainda não pediu": lista de quem já pediu antes e não pediu nesta rodada, com lembrete por WhatsApp. */
-export function PendingCard({ round }: { round: PendingRound }) {
+export function PendingCard({ round, path = "" }: { round: PendingRound; path?: string }) {
   const open = round.state === "open";
   const q = useQuery({
     queryKey: ["pending-participants", round.id],
@@ -41,8 +41,8 @@ export function PendingCard({ round }: { round: PendingRound }) {
   const [showMsg, setShowMsg] = useState(false);
 
   useEffect(() => {
-    setLink(loadPublicUrl() ?? window.location.origin);
-  }, []);
+    setLink((loadPublicUrl() ?? window.location.origin) + path);
+  }, [path]);
   useEffect(() => {
     if (!edited)
       setTemplate(reminderTemplate({ roundName: round.name, link, closesAt: round.closes_at }));

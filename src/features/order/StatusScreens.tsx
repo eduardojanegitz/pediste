@@ -5,13 +5,28 @@ import { formatCountdown, formatSaoPaulo, formatSaoPauloTime } from "@/lib/forma
 import type { ActiveRound } from "@/lib/orders.functions";
 import { Shell } from "./Shell";
 
-export function NoRoundScreen() {
+export function NoRoundScreen({ establishmentName }: { establishmentName?: string | undefined }) {
   return (
     <Shell>
       <Logo className="text-7xl" />
       <h1 className="mt-6 text-4xl">Ainda sem pedidos por aqui</h1>
       <p className="mt-3 text-muted-foreground">
-        Nenhuma rodada está aberta no momento. Volte em breve!
+        {establishmentName
+          ? `Nenhuma rodada de ${establishmentName} está aberta no momento. Volte em breve!`
+          : "Nenhuma rodada está aberta no momento. Volte em breve!"}
+      </p>
+    </Shell>
+  );
+}
+
+/** Endereço com apelido que não existe (link digitado errado ou estabelecimento removido). */
+export function EstablishmentNotFoundScreen() {
+  return (
+    <Shell>
+      <Logo className="text-7xl" />
+      <h1 className="mt-6 text-4xl">Estabelecimento não encontrado</h1>
+      <p className="mt-3 text-muted-foreground">
+        Confira o link que você recebeu ou peça um novo ao organizador.
       </p>
     </Shell>
   );

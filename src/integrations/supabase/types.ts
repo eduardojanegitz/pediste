@@ -466,6 +466,20 @@ export type Database = {
           status: string;
         }[];
       };
+      get_active_round_for: {
+        Args: { p_establishment: string };
+        Returns: {
+          closed_at: string | null;
+          closes_at: string | null;
+          id: string;
+          name: string;
+          opened_at: string;
+          opens_at: string | null;
+          server_now: string;
+          state: string;
+          status: string;
+        }[];
+      };
       get_round_state: {
         Args: { p_round: string };
         Returns: string;

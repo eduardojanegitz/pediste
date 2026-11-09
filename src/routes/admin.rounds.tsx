@@ -20,6 +20,7 @@ import {
 } from "@/features/admin/establishment-context";
 import { ScheduleFields } from "@/features/admin/ScheduleFields";
 import { ShareDialog } from "@/features/admin/ShareDialog";
+import { participantPath } from "@/lib/scope";
 import { btnPlain, btnPrimary, errMsg, field } from "@/features/admin/ui";
 import { formatSaoPaulo } from "@/lib/format";
 import {
@@ -141,6 +142,7 @@ function RoundsPage() {
         <CurrentRound
           key={`${current.id}-${current.opens_at}-${current.closes_at}`}
           round={current}
+          sharePath={participantPath(est)}
           busy={busy}
           reduce={reduce ?? false}
           onSave={(opensV, closesV) => {
@@ -286,8 +288,11 @@ function CurrentRound({
   onSave,
   onClose,
   onReopen,
+  sharePath,
 }: {
   round: Round;
+  /** Caminho do estabelecimento no link compartilhado ("" = padrão). */
+  sharePath: string;
   busy: boolean;
   reduce: boolean;
   onSave: (opens: string, closes: string) => void;
@@ -338,7 +343,7 @@ function CurrentRound({
           )}
         </div>
       </div>
-      <ShareDialog open={shareOpen} onOpenChange={setShareOpen} round={round} />
+      <ShareDialog open={shareOpen} onOpenChange={setShareOpen} round={round} path={sharePath} />
       <ScheduleFields
         idPrefix="cur"
         opens={opens}

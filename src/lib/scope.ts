@@ -16,6 +16,10 @@ export function assertEstablishment(s: AdminScope, establishmentId: string): voi
   if (!canAccessEstablishment(s, establishmentId)) throw new Error(FORBIDDEN_ESTABLISHMENT);
 }
 
+/** Caminho do participante: o estabelecimento padrão fica em "/" e os outros em "/e/<apelido>". */
+export const participantPath = (e: { slug: string; isDefault: boolean }) =>
+  e.isDefault ? "" : `/e/${e.slug}`;
+
 /** Apelido do endereço: minúsculas, números e hífens (ex.: "padaria-do-ze"). */
 export const SLUG_RE = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 

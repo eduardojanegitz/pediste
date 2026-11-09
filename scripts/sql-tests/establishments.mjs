@@ -78,6 +78,22 @@ ok((await code(db.exec(`INSERT INTO rounds (name) VALUES ('Dup2')`))) !== "OK", 
 const ar = await q("SELECT id FROM get_active_round()");
 ok(ar.length === 1 && ar[0].id === id("f01"), "get_active_round devolve só a rodada do Padrão");
 
+// C3b: rodada atual por estabelecimento (get_active_round_for).
+const mig2 = fs.readFileSync(path.join(root, "migrations", files[last + 1]), "utf8");
+await db.exec(mig2);
+await db.exec(mig2); // idempotente
+const forPad = await q("SELECT id FROM get_active_round_for($1)", [DEF]);
+const forPad2 = await q("SELECT id, state FROM get_active_round_for($1)", [id("e11")]);
+ok(forPad.length === 1 && forPad[0].id === id("f01"), "get_active_round_for(Padrão) devolve a rodada do Padrão");
+ok(forPad2.length === 1 && forPad2[0].id === id("f02") && forPad2[0].state === "open", "get_active_round_for(Padaria) devolve a da Padaria");
+ok((await q("SELECT id FROM get_active_round_for($1)", ["00000000-0000-0000-0000-0000000000ff"])).length === 0, "estabelecimento sem rodada: vazio");
+await db.exec(`UPDATE rounds SET status = 'closed', closed_at = now() WHERE id = '${id("f02")}'`);
+ok((await q("SELECT id FROM get_active_round_for($1)", [id("e11")])).length === 0, "rodada encerrada some só daquele estabelecimento");
+ok((await q("SELECT id FROM get_active_round_for($1)", [DEF])).length === 1, "e a do Padrão continua");
+await db.exec(`UPDATE rounds SET status = 'open', closed_at = NULL WHERE id = '${id("f02")}'`);
+const gr = await q(`SELECT grantee FROM information_schema.routine_privileges WHERE routine_name = 'get_active_round_for' AND grantee IN ('anon','authenticated','PUBLIC')`);
+ok(gr.length === 0, "anon/authenticated não executam get_active_round_for");
+
 // submit_order: escopo do estabelecimento.
 await db.exec(`
 INSERT INTO categories (id,name,position,min_select,max_select,establishment_id) VALUES ('${id("c11")}','Salgados',0,1,1,'${id("e11")}');
