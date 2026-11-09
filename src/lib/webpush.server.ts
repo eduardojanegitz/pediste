@@ -5,10 +5,12 @@
  * serviço de push do navegador.
  */
 
-const b64uToBytes = (s: string): Uint8Array => {
+const b64uToBytes = (s: string): Uint8Array<ArrayBuffer> => {
   const pad = "=".repeat((4 - (s.length % 4)) % 4);
   const bin = atob((s + pad).replace(/-/g, "+").replace(/_/g, "/"));
-  return Uint8Array.from(bin, (c) => c.charCodeAt(0));
+  const out = new Uint8Array(new ArrayBuffer(bin.length));
+  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+  return out;
 };
 
 export const bytesToB64u = (b: Uint8Array): string =>
@@ -96,5 +98,37 @@ export async function sendPush(
   } catch (e) {
     console.error("push", e instanceof Error ? e.message : e);
     return "failed";
+  }
+}
+
+/**
+ * Confere se a chave privada combina com a pública: assina um JWT de teste e verifica a assinatura
+ * com a chave pública. Devolve null se está tudo certo, ou o motivo do problema.
+ */
+export async function vapidSelfTest(cfg: VapidConfig): Promise<string | null> {
+  try {
+    const pub = b64uToBytes(cfg.publicKey);
+    if (pub.length !== 65 || pub[0] !== 4) return "a chave pública não tem o formato esperado";
+    const jwt = await vapidJwt(cfg, "https://push.example");
+    const [h, p, s] = jwt.split(".") as [string, string, string];
+    const key = await crypto.subtle.importKey(
+      "raw",
+      pub,
+      { name: "ECDSA", namedCurve: "P-256" },
+      false,
+      ["verify"],
+    );
+    const ok = await crypto.subtle.verify(
+      { name: "ECDSA", hash: "SHA-256" },
+      key,
+      b64uToBytes(s),
+      new TextEncoder().encode(`${h}.${p}`),
+    );
+    return ok
+      ? null
+      : "a chave privada não combina com a pública (foram geradas em execuções diferentes)";
+  } catch {
+    // O WebCrypto recusa a importação tanto de um par que não combina quanto de um formato inválido.
+    return "a chave privada não combina com a pública ou tem formato inválido (gere as duas juntas com scripts/gen-vapid.mjs)";
   }
 }

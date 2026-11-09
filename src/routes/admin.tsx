@@ -51,6 +51,7 @@ const tabs = [
 /** Abas só do super administrador (o servidor também confere; esconder aqui é só conforto). */
 const superTabs = [
   { to: "/admin/establishments", label: "Estabelecimentos", exact: false },
+  { to: "/admin/health", label: "Saúde", exact: false },
 ] as const;
 
 function AdminLayout() {

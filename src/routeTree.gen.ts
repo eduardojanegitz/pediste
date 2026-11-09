@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AdminEstablishmentsRouteImport } from './routes/admin.establishments'
+import { Route as AdminHealthRouteImport } from './routes/admin.health'
 import { Route as AdminOrdersRouteImport } from './routes/admin.orders'
 import { Route as AdminReportsRouteImport } from './routes/admin.reports'
 import { Route as AdminRoundsRouteImport } from './routes/admin.rounds'
@@ -39,6 +40,11 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
 const AdminEstablishmentsRoute = AdminEstablishmentsRouteImport.update({
   id: '/establishments',
   path: '/establishments',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminHealthRoute = AdminHealthRouteImport.update({
+  id: '/health',
+  path: '/health',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminOrdersRoute = AdminOrdersRouteImport.update({
@@ -81,6 +87,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
   '/admin/establishments': typeof AdminEstablishmentsRoute
+  '/admin/health': typeof AdminHealthRoute
   '/admin/orders': typeof AdminOrdersRoute
   '/admin/reports': typeof AdminReportsRoute
   '/admin/rounds': typeof AdminRoundsRoute
@@ -93,6 +100,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin/establishments': typeof AdminEstablishmentsRoute
+  '/admin/health': typeof AdminHealthRoute
   '/admin/orders': typeof AdminOrdersRoute
   '/admin/reports': typeof AdminReportsRoute
   '/admin/rounds': typeof AdminRoundsRoute
@@ -107,6 +115,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
   '/admin/establishments': typeof AdminEstablishmentsRoute
+  '/admin/health': typeof AdminHealthRoute
   '/admin/orders': typeof AdminOrdersRoute
   '/admin/reports': typeof AdminReportsRoute
   '/admin/rounds': typeof AdminRoundsRoute
@@ -122,6 +131,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/admin/establishments'
+    | '/admin/health'
     | '/admin/orders'
     | '/admin/reports'
     | '/admin/rounds'
@@ -134,6 +144,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/admin/establishments'
+    | '/admin/health'
     | '/admin/orders'
     | '/admin/reports'
     | '/admin/rounds'
@@ -147,6 +158,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/admin/establishments'
+    | '/admin/health'
     | '/admin/orders'
     | '/admin/reports'
     | '/admin/rounds'
@@ -193,6 +205,13 @@ declare module '@tanstack/react-router' {
       path: '/establishments'
       fullPath: '/admin/establishments'
       preLoaderRoute: typeof AdminEstablishmentsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/health': {
+      id: '/admin/health'
+      path: '/health'
+      fullPath: '/admin/health'
+      preLoaderRoute: typeof AdminHealthRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/orders': {
@@ -249,6 +268,7 @@ declare module '@tanstack/react-router' {
 
 interface AdminRouteChildren {
   AdminEstablishmentsRoute: typeof AdminEstablishmentsRoute
+  AdminHealthRoute: typeof AdminHealthRoute
   AdminOrdersRoute: typeof AdminOrdersRoute
   AdminReportsRoute: typeof AdminReportsRoute
   AdminRoundsRoute: typeof AdminRoundsRoute
@@ -258,6 +278,7 @@ interface AdminRouteChildren {
 
 const AdminRouteChildren: AdminRouteChildren = {
   AdminEstablishmentsRoute: AdminEstablishmentsRoute,
+  AdminHealthRoute: AdminHealthRoute,
   AdminOrdersRoute: AdminOrdersRoute,
   AdminReportsRoute: AdminReportsRoute,
   AdminRoundsRoute: AdminRoundsRoute,
