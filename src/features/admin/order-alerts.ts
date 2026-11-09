@@ -56,7 +56,7 @@ export function pulseSignature(rows: PulseRow[]): string {
   return rows.map((r) => `${r.id}:${r.version}:${r.status}`).join("|");
 }
 
-/** Título da aba com a contagem de novidades não vistas: "(2) Pedidos — PedeAí!". */
+/** Título da aba com a contagem de novidades não vistas: "(2) Pedidos — Pediste". */
 export function titleWithCount(base: string, unseen: number): string {
   return unseen > 0 ? `(${unseen}) ${base}` : base;
 }

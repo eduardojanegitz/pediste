@@ -31,7 +31,7 @@ export function vapidFromEnv(): VapidConfig | null {
   return {
     publicKey,
     privateKey,
-    subject: process.env["VAPID_SUBJECT"] || "mailto:admin@pedeai.local",
+    subject: process.env["VAPID_SUBJECT"] || "mailto:admin@pediste.local",
   };
 }
 

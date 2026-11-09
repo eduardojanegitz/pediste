@@ -28,7 +28,7 @@ const BRAND = [
   "bg-secondary",
   "bg-foreground",
 ];
-const LETTERS = ["P", "e", "d", "e", "A", "í"] as const;
+const LETTERS = ["P", "e", "d", "i", "s", "t", "e"] as const;
 const PARTICLES = 26;
 
 type Particle = {
@@ -92,7 +92,7 @@ function ParticleView({ p, scene }: { p: Particle; scene: Scene }) {
 }
 
 /**
- * Conclusão do pedido (marca PedeAí!). Sequência: sacola desliza → explosão de partículas →
+ * Conclusão do pedido (marca Pediste). Sequência: sacola desliza → explosão de partículas →
  * partículas convergem e formam a marca → mensagem + resumo + ações.
  * Só é montada DEPOIS de o servidor confirmar a gravação. "updated" é a versão reduzida (sem explosão).
  * Com movimento reduzido mostra direto o estado final, sem deslocamentos.
@@ -251,7 +251,7 @@ export function OrderSuccess({
             </>
           )}
 
-          {/* Marca: letras com mola; o "!" pulsa e brilha */}
+          {/* Marca: letras com mola; o "?" pulsa e brilha */}
           <div className="absolute inset-0 grid place-items-center">
             <h1
               aria-hidden
@@ -301,7 +301,7 @@ export function OrderSuccess({
                       : { type: "spring", stiffness: 330, damping: 12, delay: 0.38 }
                   }
                 >
-                  !
+                  ?
                 </motion.span>
               </span>
             </h1>

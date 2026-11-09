@@ -29,7 +29,7 @@ export function summarizeHealth(checks: HealthCheck[]) {
 export function subjectLooksPlaceholder(subject: string | undefined): boolean {
   if (!subject) return true;
   if (!/^(mailto:[^\s@]+@[^\s@]+\.[^\s@]+|https:\/\/\S+)$/i.test(subject)) return true;
-  return /exemplo\.com|example\.com|pedeai\.local|seu-email/i.test(subject);
+  return /exemplo\.com|example\.com|pedeai\.local|pediste\.local|seu-email/i.test(subject);
 }
 
 /** Ordem de exibição dos grupos. */

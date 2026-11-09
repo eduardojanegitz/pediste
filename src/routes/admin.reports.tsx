@@ -3,7 +3,7 @@ import { ReportView } from "@/features/admin/ReportView";
 
 export const Route = createFileRoute("/admin/reports")({
   head: () => ({
-    meta: [{ title: "Relatórios — PedeAí!" }, { name: "robots", content: "noindex" }],
+    meta: [{ title: "Relatórios — Pediste" }, { name: "robots", content: "noindex" }],
   }),
   component: ReportsPage,
 });

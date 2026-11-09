@@ -70,7 +70,7 @@ const roundsQuery = (establishmentId: string) =>
   });
 
 export const Route = createFileRoute("/admin/orders")({
-  head: () => ({ meta: [{ title: "Pedidos — PedeAí!" }, { name: "robots", content: "noindex" }] }),
+  head: () => ({ meta: [{ title: "Pedidos — Pediste" }, { name: "robots", content: "noindex" }] }),
   loader: ({ context }) => {
     const est = pickEstablishment(context.establishments, readStoredEstablishment());
     return est ? context.queryClient.ensureQueryData(roundsQuery(est.id)) : undefined;

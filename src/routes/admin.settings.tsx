@@ -6,7 +6,7 @@ import { getPixSettings } from "@/lib/pix.functions";
 const settingsQuery = queryOptions({ queryKey: ["pix-settings"], queryFn: () => getPixSettings() });
 
 export const Route = createFileRoute("/admin/settings")({
-  head: () => ({ meta: [{ title: "Ajustes — PedeAí!" }, { name: "robots", content: "noindex" }] }),
+  head: () => ({ meta: [{ title: "Ajustes — Pediste" }, { name: "robots", content: "noindex" }] }),
   loader: ({ context }) => context.queryClient.ensureQueryData(settingsQuery),
   pendingComponent: () => <div className="h-40 animate-pulse rounded-3xl bg-muted" />,
   component: SettingsPage,

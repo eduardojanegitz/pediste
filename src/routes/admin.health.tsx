@@ -3,7 +3,7 @@ import { HealthView } from "@/features/admin/HealthView";
 
 export const Route = createFileRoute("/admin/health")({
   head: () => ({
-    meta: [{ title: "Saúde — PedeAí!" }, { name: "robots", content: "noindex" }],
+    meta: [{ title: "Saúde — Pediste" }, { name: "robots", content: "noindex" }],
   }),
   component: HealthPage,
 });

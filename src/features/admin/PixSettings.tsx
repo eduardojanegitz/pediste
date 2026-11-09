@@ -129,7 +129,7 @@ export function PixSettingsForm({
         </h2>
         <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
           Cada organizador cadastra a própria chave. Depois de confirmar o pedido, o participante vê
-          o valor, o QR Code e o código Pix "copia e cola" da rodada que você abriu. O PedeAí! não
+          o valor, o QR Code e o código Pix "copia e cola" da rodada que você abriu. O Pediste não
           confirma o pagamento sozinho: você marca quem já pagou na aba Pedidos.
         </p>
       </div>

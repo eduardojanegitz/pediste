@@ -1,4 +1,4 @@
-# PedeAí!
+# Pediste
 
 Cardápio digital interativo (TanStack Start + React + Tailwind + Motion) com banco, login do admin e fotos no Supabase (hoje via Lovable Cloud).
 

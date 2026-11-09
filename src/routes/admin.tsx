@@ -17,7 +17,7 @@ export const Route = createFileRoute("/admin")({
   ssr: false,
   head: () => ({
     meta: [
-      { title: "Painel — PedeAí!" },
+      { title: "Painel — Pediste" },
       { name: "description", content: "Gerencie produtos, rodadas e pedidos do cardápio." },
       { name: "robots", content: "noindex" },
     ],

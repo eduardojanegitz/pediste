@@ -39,7 +39,7 @@ const catalogQuery = (establishmentId: string) =>
 export const Route = createFileRoute("/admin/")({
   head: () => ({
     meta: [
-      { title: "Cardápio — PedeAí!" },
+      { title: "Cardápio — Pediste" },
       {
         name: "description",
         content: "Gerencie categorias, produtos e regras de escolha do cardápio.",

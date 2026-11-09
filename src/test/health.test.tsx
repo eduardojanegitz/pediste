@@ -40,6 +40,8 @@ describe("regras puras", () => {
     expect(subjectLooksPlaceholder(undefined)).toBe(true);
     expect(subjectLooksPlaceholder("")).toBe(true);
     expect(subjectLooksPlaceholder("mailto:seu-email@exemplo.com")).toBe(true);
+    expect(subjectLooksPlaceholder("mailto:admin@pediste.local")).toBe(true);
+    // o contato de exemplo do nome antigo também continua sendo reconhecido
     expect(subjectLooksPlaceholder("mailto:admin@pedeai.local")).toBe(true);
     expect(subjectLooksPlaceholder("joao@empresa.com.br")).toBe(true); // sem mailto:
     expect(subjectLooksPlaceholder("mailto:ti@empresa.com.br")).toBe(false);

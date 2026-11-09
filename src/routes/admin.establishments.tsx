@@ -3,7 +3,7 @@ import { EstablishmentsView } from "@/features/admin/EstablishmentsView";
 
 export const Route = createFileRoute("/admin/establishments")({
   head: () => ({
-    meta: [{ title: "Estabelecimentos — PedeAí!" }, { name: "robots", content: "noindex" }],
+    meta: [{ title: "Estabelecimentos — Pediste" }, { name: "robots", content: "noindex" }],
   }),
   component: EstablishmentsPage,
 });

@@ -46,7 +46,7 @@ export function OrderStatus({ token, roundId }: { token: string; roundId: string
   useEffect(() => {
     if (progress !== "ready") return;
     const old = document.title;
-    document.title = "Pedido pronto! · PedeAí!";
+    document.title = "Pedido pronto! · Pediste";
     return () => {
       document.title = old;
     };
@@ -165,7 +165,7 @@ function PushToggle({ token }: { token: string }) {
     return (
       <p className={base}>
         <BellOff className="h-4 w-4 shrink-0" aria-hidden /> Para receber aviso no iPhone, toque em
-        Compartilhar e “Adicionar à Tela de Início”, e abra o PedeAí! por lá.
+        Compartilhar e “Adicionar à Tela de Início”, e abra o Pediste por lá.
       </p>
     );
   if (state === "denied")

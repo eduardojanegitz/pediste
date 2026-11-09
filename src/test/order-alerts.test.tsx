@@ -82,8 +82,8 @@ describe("textos e prioridade", () => {
     expect(describeEvents([])).toBe("");
   });
   it("título e assinatura", () => {
-    expect(titleWithCount("Pedidos — PedeAí!", 0)).toBe("Pedidos — PedeAí!");
-    expect(titleWithCount("Pedidos — PedeAí!", 3)).toBe("(3) Pedidos — PedeAí!");
+    expect(titleWithCount("Pedidos — Pediste", 0)).toBe("Pedidos — Pediste");
+    expect(titleWithCount("Pedidos — Pediste", 3)).toBe("(3) Pedidos — Pediste");
     expect(pulseSignature([row("a", 1)])).not.toBe(pulseSignature([row("a", 2)]));
     expect(pulseSignature([row("a", 1)])).not.toBe(pulseSignature([row("a", 1, "cancelled")]));
   });
@@ -136,7 +136,7 @@ describe("useOrderAlerts", () => {
     pulseFn.mockResolvedValue([row("a")]);
     ready = false;
     localStorage.clear();
-    document.title = "Pedidos — PedeAí!";
+    document.title = "Pedidos — Pediste";
   });
 
   it("a primeira leitura não toca nem conta", async () => {
@@ -159,7 +159,7 @@ describe("useOrderAlerts", () => {
     await waitFor(() => expect(play).toHaveBeenCalledWith("new", 0.7));
     expect(hook.result.current.unseen).toBe(1);
     expect([...hook.result.current.newIds]).toEqual(["b"]);
-    expect(document.title).toBe("(1) Pedidos — PedeAí!");
+    expect(document.title).toBe("(1) Pedidos — Pediste");
     expect(invalidate).toHaveBeenCalledWith({ queryKey: ["round-orders", ROUND] });
   });
 

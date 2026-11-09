@@ -5,7 +5,7 @@ import { ParticipantPage } from "@/features/order/ParticipantPage";
 export const Route = createFileRoute("/e/$slug")({
   head: () => ({
     meta: [
-      { title: "PedeAí! — Faça seu pedido" },
+      { title: "Pediste — Faça seu pedido" },
       { name: "description", content: "Escolha seus itens no cardápio e confirme seu pedido." },
     ],
   }),

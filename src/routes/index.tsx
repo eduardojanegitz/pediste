@@ -4,9 +4,9 @@ import { ParticipantPage } from "@/features/order/ParticipantPage";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "PedeAí! — Faça seu pedido" },
+      { title: "Pediste — Faça seu pedido" },
       { name: "description", content: "Escolha seus itens no cardápio e confirme seu pedido." },
-      { property: "og:title", content: "PedeAí! — Faça seu pedido" },
+      { property: "og:title", content: "Pediste — Faça seu pedido" },
       {
         property: "og:description",
         content: "Escolha seus itens no cardápio e confirme seu pedido.",

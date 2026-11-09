@@ -1,6 +1,6 @@
 import { motion, useReducedMotion } from "motion/react";
 
-/** Marca PedeAí! — o "!" pulsa de leve (desligado com movimento reduzido). */
+/** Marca Pediste — o "?" pulsa de leve (desligado com movimento reduzido). */
 export function Logo({
   className = "text-6xl",
   animate = true,
@@ -12,14 +12,14 @@ export function Logo({
   return (
     <span
       role="img"
-      aria-label="PedeAí!"
+      aria-label="Pediste"
       className={`font-display inline-flex items-baseline leading-none tracking-wide ${className}`}
     >
       <span aria-hidden className="text-foreground">
-        Pede
+        Pedi
       </span>
       <span aria-hidden className="text-primary">
-        Aí
+        ste
       </span>
       <motion.span
         aria-hidden
@@ -27,7 +27,7 @@ export function Logo({
         {...(animate && !reduce ? { animate: { scale: [1, 1.18, 1], rotate: [0, -6, 0] } } : {})}
         transition={{ duration: 1.6, repeat: Infinity, repeatDelay: 2.4, ease: "easeInOut" }}
       >
-        !
+        ?
       </motion.span>
     </span>
   );

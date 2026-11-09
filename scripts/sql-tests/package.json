@@ -1,5 +1,5 @@
 {
-  "name": "pedeai-sql-tests",
+  "name": "pediste-sql-tests",
   "private": true,
   "type": "module",
   "description": "Testes das migrações SQL em um Postgres local (PGlite). Não faz parte do app.",
