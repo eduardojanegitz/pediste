@@ -111,13 +111,16 @@ function AdminLayout() {
           </button>
         </div>
       </header>
-      <nav aria-label="Seções do painel" className="mb-8 flex gap-2 overflow-x-auto">
+      <nav
+        aria-label="Seções do painel"
+        className="-mx-1 mb-6 flex gap-3 overflow-x-auto px-1 pb-2 pt-1"
+      >
         {[...tabs, ...(isSuper ? superTabs : [])].map((t) => (
           <Link
             key={t.to}
             to={t.to}
             activeOptions={{ exact: t.exact }}
-            className="pop-press rounded-full border-2 border-foreground bg-card px-5 py-2 font-bold shadow-pop"
+            className="pop-press shrink-0 whitespace-nowrap rounded-full border-2 border-foreground bg-card px-5 py-2 font-bold shadow-pop"
             activeProps={{ className: "bg-primary text-primary-foreground" }}
           >
             {t.label}
