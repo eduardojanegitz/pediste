@@ -6,7 +6,7 @@ export const Route = createFileRoute("/comanda/$token")({
   ssr: false,
   head: () => ({
     meta: [
-      { title: "Comanda ao vivo — PedeAí!" },
+      { title: "Comanda ao vivo — Pediste" },
       { name: "robots", content: "noindex, nofollow" },
       { name: "referrer", content: "no-referrer" },
     ],

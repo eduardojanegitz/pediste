@@ -12,11 +12,15 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
+import { Route as AdminEstablishmentsRouteImport } from './routes/admin.establishments'
+import { Route as AdminHealthRouteImport } from './routes/admin.health'
 import { Route as AdminOrdersRouteImport } from './routes/admin.orders'
+import { Route as AdminReportsRouteImport } from './routes/admin.reports'
 import { Route as AdminRoundsRouteImport } from './routes/admin.rounds'
 import { Route as AdminSettingsRouteImport } from './routes/admin.settings'
 import { Route as AdminLoginRouteImport } from './routes/admin_.login'
 import { Route as ComandaTokenRouteImport } from './routes/comanda.$token'
+import { Route as ESlugRouteImport } from './routes/e.$slug'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -33,9 +37,24 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminEstablishmentsRoute = AdminEstablishmentsRouteImport.update({
+  id: '/establishments',
+  path: '/establishments',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminHealthRoute = AdminHealthRouteImport.update({
+  id: '/health',
+  path: '/health',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminOrdersRoute = AdminOrdersRouteImport.update({
   id: '/orders',
   path: '/orders',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminReportsRoute = AdminReportsRouteImport.update({
+  id: '/reports',
+  path: '/reports',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminRoundsRoute = AdminRoundsRouteImport.update({
@@ -58,35 +77,52 @@ const ComandaTokenRoute = ComandaTokenRouteImport.update({
   path: '/comanda/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ESlugRoute = ESlugRouteImport.update({
+  id: '/e/$slug',
+  path: '/e/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
+  '/admin/establishments': typeof AdminEstablishmentsRoute
+  '/admin/health': typeof AdminHealthRoute
   '/admin/orders': typeof AdminOrdersRoute
+  '/admin/reports': typeof AdminReportsRoute
   '/admin/rounds': typeof AdminRoundsRoute
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/login': typeof AdminLoginRoute
   '/comanda/$token': typeof ComandaTokenRoute
+  '/e/$slug': typeof ESlugRoute
   '/admin/': typeof AdminIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/admin/establishments': typeof AdminEstablishmentsRoute
+  '/admin/health': typeof AdminHealthRoute
   '/admin/orders': typeof AdminOrdersRoute
+  '/admin/reports': typeof AdminReportsRoute
   '/admin/rounds': typeof AdminRoundsRoute
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/login': typeof AdminLoginRoute
   '/comanda/$token': typeof ComandaTokenRoute
+  '/e/$slug': typeof ESlugRoute
   '/admin': typeof AdminIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
+  '/admin/establishments': typeof AdminEstablishmentsRoute
+  '/admin/health': typeof AdminHealthRoute
   '/admin/orders': typeof AdminOrdersRoute
+  '/admin/reports': typeof AdminReportsRoute
   '/admin/rounds': typeof AdminRoundsRoute
   '/admin/settings': typeof AdminSettingsRoute
   '/admin_/login': typeof AdminLoginRoute
   '/comanda/$token': typeof ComandaTokenRoute
+  '/e/$slug': typeof ESlugRoute
   '/admin/': typeof AdminIndexRoute
 }
 export interface FileRouteTypes {
@@ -94,30 +130,42 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/admin'
+    | '/admin/establishments'
+    | '/admin/health'
     | '/admin/orders'
+    | '/admin/reports'
     | '/admin/rounds'
     | '/admin/settings'
     | '/admin/login'
     | '/comanda/$token'
+    | '/e/$slug'
     | '/admin/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/admin/establishments'
+    | '/admin/health'
     | '/admin/orders'
+    | '/admin/reports'
     | '/admin/rounds'
     | '/admin/settings'
     | '/admin/login'
     | '/comanda/$token'
+    | '/e/$slug'
     | '/admin'
   id:
     | '__root__'
     | '/'
     | '/admin'
+    | '/admin/establishments'
+    | '/admin/health'
     | '/admin/orders'
+    | '/admin/reports'
     | '/admin/rounds'
     | '/admin/settings'
     | '/admin_/login'
     | '/comanda/$token'
+    | '/e/$slug'
     | '/admin/'
   fileRoutesById: FileRoutesById
 }
@@ -126,6 +174,7 @@ export interface RootRouteChildren {
   AdminRoute: typeof AdminRouteWithChildren
   AdminLoginRoute: typeof AdminLoginRoute
   ComandaTokenRoute: typeof ComandaTokenRoute
+  ESlugRoute: typeof ESlugRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -151,11 +200,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/establishments': {
+      id: '/admin/establishments'
+      path: '/establishments'
+      fullPath: '/admin/establishments'
+      preLoaderRoute: typeof AdminEstablishmentsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/health': {
+      id: '/admin/health'
+      path: '/health'
+      fullPath: '/admin/health'
+      preLoaderRoute: typeof AdminHealthRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/orders': {
       id: '/admin/orders'
       path: '/orders'
       fullPath: '/admin/orders'
       preLoaderRoute: typeof AdminOrdersRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/reports': {
+      id: '/admin/reports'
+      path: '/reports'
+      fullPath: '/admin/reports'
+      preLoaderRoute: typeof AdminReportsRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/rounds': {
@@ -186,18 +256,31 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ComandaTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/e/$slug': {
+      id: '/e/$slug'
+      path: '/e/$slug'
+      fullPath: '/e/$slug'
+      preLoaderRoute: typeof ESlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 interface AdminRouteChildren {
+  AdminEstablishmentsRoute: typeof AdminEstablishmentsRoute
+  AdminHealthRoute: typeof AdminHealthRoute
   AdminOrdersRoute: typeof AdminOrdersRoute
+  AdminReportsRoute: typeof AdminReportsRoute
   AdminRoundsRoute: typeof AdminRoundsRoute
   AdminSettingsRoute: typeof AdminSettingsRoute
   AdminIndexRoute: typeof AdminIndexRoute
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
+  AdminEstablishmentsRoute: AdminEstablishmentsRoute,
+  AdminHealthRoute: AdminHealthRoute,
   AdminOrdersRoute: AdminOrdersRoute,
+  AdminReportsRoute: AdminReportsRoute,
   AdminRoundsRoute: AdminRoundsRoute,
   AdminSettingsRoute: AdminSettingsRoute,
   AdminIndexRoute: AdminIndexRoute,
@@ -210,6 +293,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminRoute: AdminRouteWithChildren,
   AdminLoginRoute: AdminLoginRoute,
   ComandaTokenRoute: ComandaTokenRoute,
+  ESlugRoute: ESlugRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

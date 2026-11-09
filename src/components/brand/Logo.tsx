@@ -1,6 +1,7 @@
 import { motion, useReducedMotion } from "motion/react";
+import { LogoMark } from "./LogoMark";
 
-/** Marca PedeAí! — o "!" pulsa de leve (desligado com movimento reduzido). */
+/** Marca Pediste: símbolo (P com "?") + nome. O símbolo pulsa de leve (desligado com movimento reduzido). */
 export function Logo({
   className = "text-6xl",
   animate = true,
@@ -12,23 +13,21 @@ export function Logo({
   return (
     <span
       role="img"
-      aria-label="PedeAí!"
-      className={`font-display inline-flex items-baseline leading-none tracking-wide ${className}`}
+      aria-label="Pediste"
+      className={`font-display inline-flex items-center gap-[0.18em] leading-none tracking-wide ${className}`}
     >
-      <span aria-hidden className="text-foreground">
-        Pede
-      </span>
-      <span aria-hidden className="text-primary">
-        Aí
-      </span>
       <motion.span
         aria-hidden
-        className="inline-block origin-bottom text-secondary"
-        {...(animate && !reduce ? { animate: { scale: [1, 1.18, 1], rotate: [0, -6, 0] } } : {})}
+        className="inline-flex"
+        {...(animate && !reduce ? { animate: { scale: [1, 1.1, 1], rotate: [0, -6, 0] } } : {})}
         transition={{ duration: 1.6, repeat: Infinity, repeatDelay: 2.4, ease: "easeInOut" }}
       >
-        !
+        <LogoMark />
       </motion.span>
+      <span aria-hidden>
+        <span className="text-foreground">Pedi</span>
+        <span className="text-primary">ste</span>
+      </span>
     </span>
   );
 }

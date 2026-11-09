@@ -8,16 +8,61 @@ export type Database = {
   };
   public: {
     Tables: {
+      admin_establishments: {
+        Row: {
+          admin_id: string;
+          created_at: string;
+          establishment_id: string;
+        };
+        Insert: {
+          admin_id: string;
+          created_at?: string;
+          establishment_id: string;
+        };
+        Update: {
+          admin_id?: string;
+          created_at?: string;
+          establishment_id?: string;
+        };
+        Relationships: [];
+      };
+      establishments: {
+        Row: {
+          created_at: string;
+          id: string;
+          is_default: boolean;
+          name: string;
+          slug: string;
+        };
+        Insert: {
+          created_at?: string;
+          id?: string;
+          is_default?: boolean;
+          name: string;
+          slug: string;
+        };
+        Update: {
+          created_at?: string;
+          id?: string;
+          is_default?: boolean;
+          name?: string;
+          slug?: string;
+        };
+        Relationships: [];
+      };
       admins: {
         Row: {
+          is_super: boolean;
           created_at: string;
           user_id: string;
         };
         Insert: {
+          is_super?: boolean;
           created_at?: string;
           user_id: string;
         };
         Update: {
+          is_super?: boolean;
           created_at?: string;
           user_id?: string;
         };
@@ -124,6 +169,7 @@ export type Database = {
       };
       categories: {
         Row: {
+          establishment_id: string;
           allow_quantity: boolean;
           description: string | null;
           is_active: boolean;
@@ -135,6 +181,7 @@ export type Database = {
           position: number;
         };
         Insert: {
+          establishment_id?: string;
           allow_quantity?: boolean;
           description?: string | null;
           is_active?: boolean;
@@ -146,6 +193,7 @@ export type Database = {
           position?: number;
         };
         Update: {
+          establishment_id?: string;
           allow_quantity?: boolean;
           description?: string | null;
           is_active?: boolean;
@@ -160,18 +208,21 @@ export type Database = {
       };
       order_items: {
         Row: {
+          unit_price_cents: number | null;
           note: string | null;
           order_id: string;
           product_id: string;
           quantity: number;
         };
         Insert: {
+          unit_price_cents?: number | null;
           note?: string | null;
           order_id: string;
           product_id: string;
           quantity: number;
         };
         Update: {
+          unit_price_cents?: number | null;
           note?: string | null;
           order_id?: string;
           product_id?: string;
@@ -354,6 +405,7 @@ export type Database = {
       };
       rounds: {
         Row: {
+          establishment_id: string;
           closes_at: string | null;
           created_by: string | null;
           last_printed_at: string | null;
@@ -365,6 +417,7 @@ export type Database = {
           status: string;
         };
         Insert: {
+          establishment_id?: string;
           closes_at?: string | null;
           created_by?: string | null;
           last_printed_at?: string | null;
@@ -376,6 +429,7 @@ export type Database = {
           status?: string;
         };
         Update: {
+          establishment_id?: string;
           closes_at?: string | null;
           created_by?: string | null;
           last_printed_at?: string | null;
@@ -403,6 +457,24 @@ export type Database = {
       };
       get_active_round: {
         Args: Record<PropertyKey, never>;
+        Returns: {
+          closed_at: string | null;
+          closes_at: string | null;
+          id: string;
+          name: string;
+          opened_at: string;
+          opens_at: string | null;
+          server_now: string;
+          state: string;
+          status: string;
+        }[];
+      };
+      find_user_id_by_email: {
+        Args: { p_email: string };
+        Returns: string | null;
+      };
+      get_active_round_for: {
+        Args: { p_establishment: string };
         Returns: {
           closed_at: string | null;
           closes_at: string | null;

@@ -9,6 +9,8 @@ import { formatPhone } from "@/lib/phone";
 import { pixPayload, maskPixKey, type PixKeyType } from "@/lib/pix";
 import { generateRecoveryCode, normalizeRecoveryCode } from "@/lib/recovery-code";
 import { scheduleSchema } from "@/lib/schedule";
+import { assertEstablishment } from "@/lib/scope";
+import { assertOrderAccess, assertRoundAccess } from "@/lib/scope.server";
 
 // Todas as gravações e leituras de dados privados (participantes/pedidos) passam
 // por aqui, com o client administrativo apenas no servidor.
@@ -43,6 +45,11 @@ export type AdminRound = Round & {
 export type ActiveRound = Round & { server_now: string };
 
 const tokenSchema = z.string().min(32).max(128);
+/** Endereço público opcional: sem apelido = estabelecimento padrão. Aceita chamada sem argumento. */
+const publicSlugSchema = z
+  .object({ slug: z.string().max(40).optional() })
+  .optional()
+  .transform((v) => v ?? {});
 
 // Mesma regra de public.round_state(), com o relógio do servidor (usada só para listagens do admin).
 function roundState(
@@ -58,10 +65,14 @@ function roundState(
 // ---------- Rodadas ----------
 
 /** Rodada atual (status 'open') com o estado calculado pelo relógio do banco. `null` = nenhuma rodada. */
-export const getActiveRound = createServerFn({ method: "GET" }).handler(
-  async (): Promise<ActiveRound | null> => {
+export const getActiveRound = createServerFn({ method: "GET" })
+  .validator((d: unknown) => publicSlugSchema.parse(d))
+  .handler(async ({ data: input }): Promise<ActiveRound | null> => {
     const db = await admin();
-    const { data, error } = await db.rpc("get_active_round");
+    const { resolveEstablishment } = await import("@/lib/establishment.server");
+    const est = await resolveEstablishment(db, input.slug);
+    if (!est) return null;
+    const { data, error } = await db.rpc("get_active_round_for", { p_establishment: est.id });
     if (error) {
       console.error(error);
       throw new Error("Não foi possível carregar a rodada.");
@@ -74,16 +85,18 @@ export const getActiveRound = createServerFn({ method: "GET" }).handler(
           state: r.state as RoundState,
         } satisfies ActiveRound)
       : null;
-  },
-);
+  });
 
 export const listRounds = createServerFn({ method: "GET" })
   .middleware([requireAdmin])
-  .handler(async (): Promise<AdminRound[]> => {
+  .validator((d: unknown) => z.object({ establishmentId: z.string().uuid() }).parse(d))
+  .handler(async ({ data: input, context }): Promise<AdminRound[]> => {
+    assertEstablishment(context, input.establishmentId);
     const db = await admin();
     const { data, error } = await db
       .from("rounds")
       .select("*")
+      .eq("establishment_id", input.establishmentId)
       .order("opened_at", { ascending: false });
     if (error) throw new Error("Não foi possível carregar as rodadas.");
     const now = Date.now();
@@ -109,15 +122,18 @@ export const openRound = createServerFn({ method: "POST" })
   .validator((d: unknown) =>
     z
       .object({
+        establishmentId: z.string().uuid(),
         name: z.string().trim().min(1, "Informe um nome").max(80),
         schedule: scheduleSchema.optional(),
       })
       .parse(d),
   )
   .handler(async ({ data, context }) => {
+    assertEstablishment(context, data.establishmentId);
     const db = await admin();
     await closeExpiredRounds(db);
     const { error } = await db.from("rounds").insert({
+      establishment_id: data.establishmentId,
       name: data.name,
       created_by: context.adminId,
       opens_at: data.schedule?.opensAt ?? null,
@@ -135,8 +151,9 @@ export const openRound = createServerFn({ method: "POST" })
 export const updateRoundSchedule = createServerFn({ method: "POST" })
   .middleware([requireAdmin])
   .validator((d: unknown) => z.object({ id: z.string().uuid(), schedule: scheduleSchema }).parse(d))
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
     const db = await admin();
+    await assertRoundAccess(db, context, data.id);
     const { error, count } = await db
       .from("rounds")
       .update(
@@ -162,11 +179,12 @@ export const reopenRound = createServerFn({ method: "POST" })
       .object({ id: z.string().uuid(), closesAt: z.string().datetime({ offset: true }).nullable() })
       .parse(d),
   )
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
     if (data.closesAt && Date.parse(data.closesAt) <= Date.now()) {
       throw new Error("Escolha um encerramento no futuro para reabrir.");
     }
     const db = await admin();
+    await assertRoundAccess(db, context, data.id);
     await closeExpiredRounds(db);
     const { error } = await db
       .from("rounds")
@@ -183,8 +201,9 @@ export const reopenRound = createServerFn({ method: "POST" })
 export const closeRound = createServerFn({ method: "POST" })
   .middleware([requireAdmin])
   .validator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
     const db = await admin();
+    await assertRoundAccess(db, context, data.id);
     const { error } = await db
       .from("rounds")
       .update({ status: "closed", closed_at: new Date().toISOString() })
@@ -208,6 +227,8 @@ export type MyOrder = {
     quantity: number;
     product_name: string | null;
     note: string | null;
+    /** Preço unitário guardado no pedido (centavos); null = sem preço. */
+    unit_price_cents: number | null;
   }[];
 };
 
@@ -235,7 +256,9 @@ export const getMyOrder = createServerFn({ method: "POST" })
     if (!data.roundId) return { participant, has_phone, status: null, version: 0, items: [] };
     const { data: order } = await db
       .from("orders")
-      .select("id, status, version, order_items(product_id, quantity, note, products(name))")
+      .select(
+        "id, status, version, order_items(product_id, quantity, note, unit_price_cents, products(name))",
+      )
       .eq("round_id", data.roundId)
       .eq("participant_id", participant.id)
       .maybeSingle();
@@ -250,6 +273,7 @@ export const getMyOrder = createServerFn({ method: "POST" })
         quantity: i.quantity,
         product_name: i.products?.name ?? null,
         note: i.note ?? null,
+        unit_price_cents: i.unit_price_cents,
       })),
     };
   });
@@ -266,9 +290,23 @@ export const getLastOrder = createServerFn({ method: "POST" })
     const db = await admin();
     const found = await findParticipant(db, data.token);
     if (!found) return null;
+    // "O de sempre" vale só dentro do mesmo estabelecimento da rodada atual (sem rodada, o padrão).
+    let est: string | undefined;
+    if (data.roundId) {
+      const { establishmentOfRound } = await import("@/lib/scope.server");
+      est = await establishmentOfRound(db, data.roundId).catch(() => undefined);
+    }
+    if (!est) {
+      const { resolveEstablishment } = await import("@/lib/establishment.server");
+      est = (await resolveEstablishment(db, undefined))?.id;
+    }
+    if (!est) return null;
     let q = db
       .from("orders")
-      .select("updated_at, rounds(name), order_items(product_id, quantity, note, products(name))")
+      .select(
+        "updated_at, rounds!inner(name, establishment_id), order_items(product_id, quantity, note, products(name))",
+      )
+      .eq("rounds.establishment_id", est)
       .eq("participant_id", found.id)
       .eq("status", "confirmed")
       .order("updated_at", { ascending: false })
@@ -306,7 +344,7 @@ export const getMyPayment = createServerFn({ method: "POST" })
     if (!found) return { state: "unavailable", reason: "no_order" };
     const { data: order } = await db
       .from("orders")
-      .select("status, paid_at, updated_at, order_items(quantity, products(price_cents))")
+      .select("status, paid_at, updated_at, order_items(quantity, unit_price_cents)")
       .eq("round_id", data.roundId)
       .eq("participant_id", found.id)
       .maybeSingle();
@@ -314,11 +352,12 @@ export const getMyPayment = createServerFn({ method: "POST" })
 
     let total = 0;
     let priced = false;
+    // Preço guardado no pedido: mudar o preço do produto depois não altera o que o participante deve.
     for (const i of order.order_items as unknown as {
       quantity: number;
-      products: { price_cents: number | null } | null;
+      unit_price_cents: number | null;
     }[]) {
-      const price = i.products?.price_cents;
+      const price = i.unit_price_cents;
       if (price != null) {
         total += price * i.quantity;
         priced = true;
@@ -397,13 +436,18 @@ export type PendingParticipant = { id: string; name: string; phone: string; phon
 export const getPendingParticipants = createServerFn({ method: "POST" })
   .middleware([requireAdmin])
   .validator((d: unknown) => z.object({ roundId: z.string().uuid() }).parse(d))
-  .handler(async ({ data }): Promise<{ now: string; people: PendingParticipant[] }> => {
+  .handler(async ({ data, context }): Promise<{ now: string; people: PendingParticipant[] }> => {
     const db = await admin();
+    const est = await assertRoundAccess(db, context, data.roundId);
     const [{ data: past, error }, { data: here, error: e2 }] = await Promise.all([
       db
         .from("orders")
-        .select("participant_id, participants(display_name, phone_e164)")
+        .select(
+          "participant_id, participants(display_name, phone_e164), rounds!inner(establishment_id)",
+        )
         .eq("status", "confirmed")
+        // "Já pediu antes" vale só dentro do mesmo estabelecimento.
+        .eq("rounds.establishment_id", est)
         .neq("round_id", data.roundId)
         .limit(2000),
       db
@@ -600,12 +644,13 @@ export type RoundOrder = {
 export const getRoundOrders = createServerFn({ method: "GET" })
   .middleware([requireAdmin])
   .validator((d: unknown) => z.object({ roundId: z.string().uuid() }).parse(d))
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
     const db = await admin();
+    await assertRoundAccess(db, context, data.roundId);
     const { data: rows, error } = await db
       .from("orders")
       .select(
-        "id, created_at, updated_at, version, paid_at, done_at, participant_id, participants(display_name, phone_e164), order_items(quantity, note, product_id, products(name, price_cents, categories(name, position)))",
+        "id, created_at, updated_at, version, paid_at, done_at, participant_id, participants(display_name, phone_e164), order_items(quantity, note, product_id, unit_price_cents, products(name, categories(name, position)))",
       )
       .eq("round_id", data.roundId)
       .eq("status", "confirmed")
@@ -624,9 +669,9 @@ export const getRoundOrders = createServerFn({ method: "GET" })
         quantity: number;
         note: string | null;
         product_id: string;
+        unit_price_cents: number | null;
         products: {
           name: string;
-          price_cents: number | null;
           categories: { name: string; position: number } | null;
         } | null;
       }[];
@@ -647,7 +692,7 @@ export const getRoundOrders = createServerFn({ method: "GET" })
           product: i.products?.name ?? "Item removido",
           category: i.products?.categories?.name ?? null,
           category_position: i.products?.categories?.position ?? 9999,
-          price_cents: i.products?.price_cents ?? null,
+          price_cents: i.unit_price_cents,
           quantity: i.quantity,
           note: i.note ?? null,
         }))
@@ -670,8 +715,9 @@ export const markRoundPrinted = createServerFn({ method: "POST" })
   .validator((d: unknown) =>
     z.object({ roundId: z.string().uuid(), printedAt: z.string().datetime() }).parse(d),
   )
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
     const db = await admin();
+    await assertRoundAccess(db, context, data.roundId);
     const at = new Date(Math.min(Date.parse(data.printedAt), Date.now())).toISOString();
     const { error } = await db
       .from("rounds")
@@ -688,6 +734,7 @@ export const setOrderPaid = createServerFn({ method: "POST" })
   .validator((d: unknown) => z.object({ orderId: z.string().uuid(), paid: z.boolean() }).parse(d))
   .handler(async ({ data, context }) => {
     const db = await admin();
+    await assertOrderAccess(db, context, data.orderId);
     const { data: row, error } = await db
       .from("orders")
       .update({
@@ -719,8 +766,9 @@ export type PulseRow = {
 export const getOrdersPulse = createServerFn({ method: "GET" })
   .middleware([requireAdmin])
   .validator((d: unknown) => z.object({ roundId: z.string().uuid() }).parse(d))
-  .handler(async ({ data }): Promise<PulseRow[]> => {
+  .handler(async ({ data, context }): Promise<PulseRow[]> => {
     const db = await admin();
+    await assertRoundAccess(db, context, data.roundId);
     const { data: rows, error } = await db
       .from("orders")
       .select("id, version, status, participants(display_name)")
@@ -750,7 +798,7 @@ export const getOrdersPulse = createServerFn({ method: "GET" })
 export const resetParticipantCode = createServerFn({ method: "POST" })
   .middleware([requireAdmin])
   .validator((d: unknown) => z.object({ participantId: z.string().uuid() }).parse(d))
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
     const db = await admin();
     const { data: p } = await db
       .from("participants")
@@ -758,6 +806,21 @@ export const resetParticipantCode = createServerFn({ method: "POST" })
       .eq("id", data.participantId)
       .maybeSingle();
     if (!p) throw new Error("Participante não encontrado.");
+    // O cadastro do participante é global: só quem tem pedido em um estabelecimento seu pode redefinir.
+    if (!context.isSuper) {
+      const { count } = await db
+        .from("orders")
+        .select("id, rounds!inner(establishment_id)", { count: "exact", head: true })
+        .eq("participant_id", p.id)
+        .in(
+          "rounds.establishment_id",
+          context.establishmentIds.length
+            ? context.establishmentIds
+            : ["00000000-0000-0000-0000-000000000000"],
+        );
+      if (!count)
+        throw new Error("Forbidden: este participante não pediu nos seus estabelecimentos.");
+    }
     if (!p.phone_e164) {
       throw new Error(
         "Este participante não tem celular cadastrado, então não há como recuperar por código.",

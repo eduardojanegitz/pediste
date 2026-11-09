@@ -17,7 +17,7 @@ export const Route = createFileRoute("/admin_/login")({
     reason: s["reason"] === "expired" || s["reason"] === "forbidden" ? s["reason"] : undefined,
   }),
   head: () => ({
-    meta: [{ title: "Entrar — PedeAí!" }, { name: "robots", content: "noindex" }],
+    meta: [{ title: "Entrar — Pediste" }, { name: "robots", content: "noindex" }],
   }),
   beforeLoad: async ({ search }) => {
     // Quem já tem sessão de admin válida vai direto ao painel.
@@ -54,7 +54,10 @@ function LoginPage() {
     if (state !== "idle") return;
     setError(null);
     setState("loading");
-    const { error: authError } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
+    const { error: authError } = await supabase.auth.signInWithPassword({
+      email: email.trim(),
+      password,
+    });
     if (authError) {
       setError(friendlyLoginError(authError));
       setState("idle");
@@ -76,7 +79,10 @@ function LoginPage() {
   return (
     <main className="grid min-h-screen lg:grid-cols-2">
       {/* Painel da marca (somente telas largas) */}
-      <aside className="relative hidden overflow-hidden border-r-[2.5px] border-foreground bg-primary lg:block" aria-hidden>
+      <aside
+        className="relative hidden overflow-hidden border-r-[2.5px] border-foreground bg-primary lg:block"
+        aria-hidden
+      >
         <motion.div
           className="absolute -right-20 -top-20 h-80 w-80 rounded-full bg-accent"
           initial={reduce ? false : { scale: 0 }}
@@ -116,7 +122,9 @@ function LoginPage() {
 
           <form onSubmit={submit} className="mt-6 space-y-4" noValidate>
             <div>
-              <label htmlFor="email" className="mb-1 block text-sm font-bold">E-mail</label>
+              <label htmlFor="email" className="mb-1 block text-sm font-bold">
+                E-mail
+              </label>
               <input
                 id="email"
                 type="email"
@@ -132,7 +140,9 @@ function LoginPage() {
               />
             </div>
             <div>
-              <label htmlFor="password" className="mb-1 block text-sm font-bold">Senha</label>
+              <label htmlFor="password" className="mb-1 block text-sm font-bold">
+                Senha
+              </label>
               <div className="relative">
                 <input
                   id="password"

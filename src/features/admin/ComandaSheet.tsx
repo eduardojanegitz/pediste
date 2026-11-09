@@ -31,7 +31,7 @@ export function ComandaSheet(p: Props) {
   const priced = p.showPrices && stats.totalCents != null;
   return (
     <div className="comanda" data-paper={p.paper}>
-      <p className="comanda__brand">PEDEAÍ! · COMANDA</p>
+      <p className="comanda__brand">PEDISTE · COMANDA</p>
       <h1 className="comanda__title">{p.roundName}</h1>
       <p className="comanda__meta">
         {formatSaoPaulo(p.generatedAt)} · {stats.orders} pedido{stats.orders === 1 ? "" : "s"} ·{" "}
@@ -44,7 +44,7 @@ export function ComandaSheet(p: Props) {
         <People {...p} priced={priced} />
       )}
 
-      <p className="comanda__foot">Gerado por PedeAí!</p>
+      <p className="comanda__foot">Gerado por Pediste</p>
     </div>
   );
 }

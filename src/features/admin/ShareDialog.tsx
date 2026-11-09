@@ -45,10 +45,13 @@ export function ShareDialog({
   open,
   onOpenChange,
   round,
+  path = "",
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   round: ShareRound;
+  /** Caminho do estabelecimento no site ("" = padrão, "/e/<apelido>" nos demais). */
+  path?: string;
 }) {
   const [address, setAddress] = useState("");
   const [message, setMessage] = useState("");
@@ -60,13 +63,14 @@ export function ShareDialog({
     setEdited(false);
   }, [open]);
 
-  const link = useMemo(() => normalizePublicUrl(address), [address]);
+  const base = useMemo(() => normalizePublicUrl(address), [address]);
+  const link = base ? base + path : null;
 
   // Guarda o endereço só quando difere do atual (painel aberto por outro endereço que o público).
   useEffect(() => {
-    if (!open || !link) return;
-    savePublicUrl(link === window.location.origin ? null : link);
-  }, [open, link]);
+    if (!open || !base) return;
+    savePublicUrl(base === window.location.origin ? null : base);
+  }, [open, base]);
 
   // A mensagem acompanha link e horários até o organizador editá-la à mão.
   useEffect(() => {

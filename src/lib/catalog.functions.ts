@@ -2,6 +2,13 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/admin-middleware";
 import { categoryInputSchema } from "@/lib/category-rules";
+import { assertEstablishment } from "@/lib/scope";
+import {
+  assertCategoriesAccess,
+  assertCategoryAccess,
+  assertProductAccess,
+  assertProductsAccess,
+} from "@/lib/scope.server";
 
 const BUCKET = "product-images";
 
@@ -36,11 +43,12 @@ export type CatalogProduct = {
 export type MenuCategory = CatalogCategory;
 export type MenuProduct = CatalogProduct;
 
-async function loadCatalog(onlyActive: boolean) {
+async function loadCatalog(onlyActive: boolean, establishmentId: string) {
   const db = await admin();
   let catQ = db
     .from("categories")
     .select("id, name, description, position, min_select, max_select, allow_quantity, is_active")
+    .eq("establishment_id", establishmentId)
     .order("position")
     .order("created_at");
   let prodQ = db
@@ -59,9 +67,8 @@ async function loadCatalog(onlyActive: boolean) {
   }
   const categories: CatalogCategory[] = cats.data;
   const visibleCats = new Set(categories.map((c) => c.id));
-  const rows = onlyActive
-    ? prods.data.filter((p) => p.category_id && visibleCats.has(p.category_id))
-    : prods.data;
+  // Só produtos de categorias deste estabelecimento (no painel, inclusive os de categoria inativa).
+  const rows = prods.data.filter((p) => p.category_id && visibleCats.has(p.category_id));
   const paths = rows.map((p) => p.image_path).filter((p): p is string => !!p);
   const urls = new Map<string, string>();
   if (paths.length) {
@@ -76,17 +83,39 @@ async function loadCatalog(onlyActive: boolean) {
 }
 
 /** Cardápio dos participantes: só categorias e produtos ativos. Público. */
-export const getMenu = createServerFn({ method: "GET" }).handler(() => loadCatalog(true));
+export const getMenu = createServerFn({ method: "GET" })
+  .validator((d: unknown) =>
+    z
+      .object({ slug: z.string().max(40).optional() })
+      .optional()
+      .transform((v) => v ?? {})
+      .parse(d),
+  )
+  .handler(async ({ data }) => {
+    const db = await admin();
+    const { resolveEstablishment } = await import("@/lib/establishment.server");
+    const est = await resolveEstablishment(db, data.slug);
+    if (!est) throw new Error("Estabelecimento não encontrado.");
+    return loadCatalog(true, est.id);
+  });
 
 /** Catálogo completo (inclui inativos) para o painel. Somente administradores. */
 export const getCatalog = createServerFn({ method: "GET" })
   .middleware([requireAdmin])
-  .handler(() => loadCatalog(false));
+  .validator((d: unknown) => z.object({ establishmentId: z.string().uuid() }).parse(d))
+  .handler(({ data, context }) => {
+    assertEstablishment(context, data.establishmentId);
+    return loadCatalog(false, data.establishmentId);
+  });
 
 export const saveCategory = createServerFn({ method: "POST" })
   .middleware([requireAdmin])
-  .validator((d: unknown) => categoryInputSchema.parse(d))
-  .handler(async ({ data }) => {
+  .validator((d: unknown) => ({
+    ...categoryInputSchema.parse(d),
+    establishmentId: z.object({ establishmentId: z.string().uuid().optional() }).parse(d)
+      .establishmentId,
+  }))
+  .handler(async ({ data, context }) => {
     const db = await admin();
     const row = {
       name: data.name,
@@ -97,18 +126,24 @@ export const saveCategory = createServerFn({ method: "POST" })
       is_active: data.is_active,
     };
     if (data.id) {
+      await assertCategoryAccess(db, context, data.id);
       const { error } = await db.from("categories").update(row).eq("id", data.id);
       if (error) throw new Error("Não foi possível salvar a categoria.");
     } else {
+      if (!data.establishmentId) throw new Error("Escolha o estabelecimento.");
+      assertEstablishment(context, data.establishmentId);
       const { data: last } = await db
         .from("categories")
         .select("position")
+        .eq("establishment_id", data.establishmentId)
         .order("position", { ascending: false })
         .limit(1)
         .maybeSingle();
-      const { error } = await db
-        .from("categories")
-        .insert({ ...row, position: (last?.position ?? -1) + 1 });
+      const { error } = await db.from("categories").insert({
+        ...row,
+        establishment_id: data.establishmentId,
+        position: (last?.position ?? -1) + 1,
+      });
       if (error) throw new Error("Não foi possível criar a categoria.");
     }
     return { ok: true };
@@ -118,8 +153,9 @@ export const saveCategory = createServerFn({ method: "POST" })
 export const reorderCategories = createServerFn({ method: "POST" })
   .middleware([requireAdmin])
   .validator((d: unknown) => z.object({ ids: z.array(z.string().uuid()).min(1).max(200) }).parse(d))
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
     const db = await admin();
+    await assertCategoriesAccess(db, context, data.ids);
     const results = await Promise.all(
       data.ids.map((id, position) => db.from("categories").update({ position }).eq("id", id)),
     );
@@ -130,8 +166,9 @@ export const reorderCategories = createServerFn({ method: "POST" })
 export const deleteCategory = createServerFn({ method: "POST" })
   .middleware([requireAdmin])
   .validator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
     const db = await admin();
+    await assertCategoryAccess(db, context, data.id);
     const { error } = await db.from("categories").delete().eq("id", data.id);
     if (error) {
       if (error.code === "23503")
@@ -172,8 +209,11 @@ const productSchema = z.object({
 export const saveProduct = createServerFn({ method: "POST" })
   .middleware([requireAdmin])
   .validator((d: unknown) => productSchema.parse(d))
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
     const db = await admin();
+    // A categoria de destino (e o produto, se já existe) precisam ser de estabelecimentos do administrador.
+    await assertCategoryAccess(db, context, data.category_id);
+    if (data.id) await assertProductAccess(db, context, data.id);
     const row = {
       name: data.name,
       description: data.description || null,
@@ -213,8 +253,9 @@ export const saveProduct = createServerFn({ method: "POST" })
 export const setProductActive = createServerFn({ method: "POST" })
   .middleware([requireAdmin])
   .validator((d: unknown) => z.object({ id: z.string().uuid(), is_active: z.boolean() }).parse(d))
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
     const db = await admin();
+    await assertProductAccess(db, context, data.id);
     const { error } = await db
       .from("products")
       .update({ is_active: data.is_active })
@@ -226,8 +267,9 @@ export const setProductActive = createServerFn({ method: "POST" })
 export const setCategoryActive = createServerFn({ method: "POST" })
   .middleware([requireAdmin])
   .validator((d: unknown) => z.object({ id: z.string().uuid(), is_active: z.boolean() }).parse(d))
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
     const db = await admin();
+    await assertCategoryAccess(db, context, data.id);
     const { error } = await db
       .from("categories")
       .update({ is_active: data.is_active })
@@ -239,8 +281,9 @@ export const setCategoryActive = createServerFn({ method: "POST" })
 export const reorderProducts = createServerFn({ method: "POST" })
   .middleware([requireAdmin])
   .validator((d: unknown) => z.object({ ids: z.array(z.string().uuid()).min(1).max(500) }).parse(d))
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
     const db = await admin();
+    await assertProductsAccess(db, context, data.ids);
     const results = await Promise.all(
       data.ids.map((id, position) => db.from("products").update({ position }).eq("id", id)),
     );
@@ -251,8 +294,9 @@ export const reorderProducts = createServerFn({ method: "POST" })
 export const deleteProduct = createServerFn({ method: "POST" })
   .middleware([requireAdmin])
   .validator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
     const db = await admin();
+    await assertProductAccess(db, context, data.id);
     const { data: old } = await db.from("products").select("image_path").eq("id", data.id).single();
     const { error } = await db.from("products").delete().eq("id", data.id);
     if (error) {

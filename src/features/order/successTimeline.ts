@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
  * Cenas da animação de conclusão (cena 1 = clique e cena 2 = processamento acontecem antes, no dock):
  * cart  → o carrinho/sacola desliza até o centro (cena 3)
  * burst → explosão de partículas (cena 4)
- * logo  → as partículas convergem e a marca PedeAí! se forma (cena 5)
+ * logo  → as partículas convergem e a marca Pediste se forma (cena 5)
  * final → mensagem, resumo e ações (cenas 6 e 7)
  */
 export type Scene = "cart" | "burst" | "logo" | "final";

@@ -4,6 +4,8 @@ export const btn =
 export const btnPrimary = `${btn} bg-primary text-primary-foreground`;
 export const btnPlain = `${btn} bg-card text-foreground`;
 export const btnDanger = `${btn} bg-destructive text-destructive-foreground`;
+/** Botão escuro (ação que encerra algo, ex.: "Encerrar agora"). Nunca misture com btnPlain/btnPrimary: duas cores de fundo/texto na mesma classe deixam o texto invisível. */
+export const btnDark = `${btn} bg-foreground text-background`;
 export const iconBtn =
   "grid h-10 w-10 shrink-0 place-items-center rounded-full border-2 border-foreground bg-card disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
 export const field =

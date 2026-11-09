@@ -17,7 +17,7 @@ vi.mock("sonner", () => ({ toast: Object.assign(vi.fn(), { error: vi.fn(), succe
 import { ShareDialog } from "@/features/admin/ShareDialog";
 
 describe("QR Code", () => {
-  const url = "https://pedeai.lovable.app";
+  const url = "https://pediste.lovable.app";
   const m = qrMatrix(url);
 
   it("tamanho segue a versão (4v + 17) e cresce com o texto", () => {
@@ -67,8 +67,8 @@ describe("QR Code", () => {
 describe("endereço e mensagem", () => {
   it("normaliza o endereço público", () => {
     expect(normalizePublicUrl("meusite.com.br")).toBe("https://meusite.com.br");
-    expect(normalizePublicUrl("  https://pedeai.lovable.app/admin?x=1#a ")).toBe(
-      "https://pedeai.lovable.app",
+    expect(normalizePublicUrl("  https://pediste.lovable.app/admin?x=1#a ")).toBe(
+      "https://pediste.lovable.app",
     );
     expect(normalizePublicUrl("http://localhost:8081/algo")).toBe("http://localhost:8081");
   });
@@ -82,7 +82,7 @@ describe("endereço e mensagem", () => {
   it("detecta endereço local", () => {
     expect(isLocalAddress("http://localhost:8081")).toBe(true);
     expect(isLocalAddress("http://127.0.0.1:3000")).toBe(true);
-    expect(isLocalAddress("https://pedeai.lovable.app")).toBe(false);
+    expect(isLocalAddress("https://pediste.lovable.app")).toBe(false);
   });
   it("mensagem com prazo, e aviso quando ainda vai abrir", () => {
     const open = whatsappMessage({
@@ -145,15 +145,15 @@ describe("janela Compartilhar", () => {
   it("trocar o endereço atualiza QR e mensagem, e fica salvo", async () => {
     setup();
     fireEvent.change(screen.getByLabelText("Endereço do site"), {
-      target: { value: "pedeai.com.br" },
+      target: { value: "pediste.com.br" },
     });
     await waitFor(() =>
-      expect(screen.getByRole("img", { name: "QR Code para https://pedeai.com.br" })).toBeTruthy(),
+      expect(screen.getByRole("img", { name: "QR Code para https://pediste.com.br" })).toBeTruthy(),
     );
     expect(
       (screen.getByLabelText("Mensagem para o WhatsApp") as HTMLTextAreaElement).value,
-    ).toContain("https://pedeai.com.br");
-    expect(localStorage.getItem("pedeai:public-url")).toBe("https://pedeai.com.br");
+    ).toContain("https://pediste.com.br");
+    expect(localStorage.getItem("pedeai:public-url")).toBe("https://pediste.com.br");
   });
 
   it("endereço inválido mostra erro e desliga as ações", () => {

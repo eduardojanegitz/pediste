@@ -14,7 +14,7 @@ export function SharePoster({
 }) {
   return (
     <div className="poster">
-      <p className="poster__brand">PEDEAÍ!</p>
+      <p className="poster__brand">PEDISTE</p>
       <h1 className="poster__title">Faça seu pedido</h1>
       <p className="poster__round">{roundName}</p>
       <QrCode text={link} label={`QR Code para ${link}`} className="poster__qr" />

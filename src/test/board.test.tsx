@@ -296,7 +296,7 @@ describe("janela do organizador", () => {
   it("gera o link com o endereço do site e mostra a URL completa uma vez", async () => {
     wrap();
     fireEvent.change(screen.getByLabelText("Endereço do site"), {
-      target: { value: "pedeai.com.br" },
+      target: { value: "pediste.com.br" },
     });
     fireEvent.change(screen.getByLabelText("Vale por"), { target: { value: "72" } });
     fireEvent.click(screen.getByRole("button", { name: /Gerar link/ }));
@@ -306,7 +306,7 @@ describe("janela do organizador", () => {
     const input = (await screen.findByRole("textbox", {
       name: "Link do estabelecimento",
     })) as HTMLInputElement;
-    expect(input.value).toBe(`https://pedeai.com.br/comanda/${"T".repeat(43)}`);
+    expect(input.value).toBe(`https://pediste.com.br/comanda/${"T".repeat(43)}`);
     expect(screen.getByText(/ele não aparece de novo/)).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: /Copiar link/ }));
     await waitFor(() => expect(copy).toHaveBeenCalledWith(input.value));

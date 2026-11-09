@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireAdmin } from "@/lib/admin-middleware";
 import { isBoardToken, shortName, type BoardOrder, type SharedBoardResult } from "@/lib/board";
 import type { RoundState } from "@/lib/orders.functions";
+import { assertRoundAccess } from "@/lib/scope.server";
 
 async function admin() {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -63,12 +64,7 @@ export const createBoardLink = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const db = await admin();
     const sec = await import("@/lib/participant-security.server");
-    const { data: round } = await db
-      .from("rounds")
-      .select("id")
-      .eq("id", data.roundId)
-      .maybeSingle();
-    if (!round) throw new Error("Rodada não encontrada.");
+    await assertRoundAccess(db, context, data.roundId);
     const now = new Date();
     const { count } = await db
       .from("board_links")
@@ -99,8 +95,9 @@ export const createBoardLink = createServerFn({ method: "POST" })
 export const listBoardLinks = createServerFn({ method: "GET" })
   .middleware([requireAdmin])
   .validator((d: unknown) => z.object({ roundId: z.string().uuid() }).parse(d))
-  .handler(async ({ data }): Promise<BoardLink[]> => {
+  .handler(async ({ data, context }): Promise<BoardLink[]> => {
     const db = await admin();
+    await assertRoundAccess(db, context, data.roundId);
     const { data: rows, error } = await db
       .from("board_links")
       .select("id, created_at, expires_at, revoked_at")
@@ -120,8 +117,15 @@ export const listBoardLinks = createServerFn({ method: "GET" })
 export const revokeBoardLink = createServerFn({ method: "POST" })
   .middleware([requireAdmin])
   .validator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
     const db = await admin();
+    const { data: link } = await db
+      .from("board_links")
+      .select("round_id")
+      .eq("id", data.id)
+      .maybeSingle();
+    if (!link) throw new Error("Link não encontrado.");
+    await assertRoundAccess(db, context, link.round_id);
     const { error } = await db
       .from("board_links")
       .update({ revoked_at: new Date().toISOString() })

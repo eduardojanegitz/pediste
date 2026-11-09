@@ -22,3 +22,34 @@ Só administradores fazem login (`/admin/login`). Participantes do cardápio nã
 ## Adicionar ou remover um admin depois
 
 Crie o usuário em Authentication e inclua o `id` dele em `public.admins` (ou apague a linha para remover o acesso; a sessão dele deixa de valer no servidor imediatamente).
+
+## Estabelecimentos e quem acessa o quê
+
+Cada estabelecimento tem o seu cardápio e as suas rodadas (a migração `20261109000100_establishments.sql` cria o estabelecimento **Padrão** e põe nele tudo que já existia).
+
+- **Super administrador** (`admins.is_super = true`): vê todos os estabelecimentos. Quem já era administrador antes da migração virou super.
+- **Administrador comum**: só vê os estabelecimentos em que está vinculado (`public.admin_establishments`).
+- A conferência é feita no servidor em toda função do painel; esconder o seletor no navegador não é a proteção.
+
+**Pela tela (recomendado):** o super administrador vê a aba **Estabelecimentos**. Nela ele cria estabelecimentos (nome e apelido do endereço), renomeia (o apelido não muda, porque os links compartilhados dependem dele) e libera ou remove administradores pelo e-mail.
+
+- A conta do administrador precisa **já existir** no Supabase (Authentication > Users). O app não cria contas nem guarda senhas.
+- Quem ainda não era administrador passa a ser administrador **comum** (só vê os estabelecimentos liberados). Quem já era mantém o papel. Virar super continua sendo feito pelo SQL (`UPDATE public.admins SET is_super = true WHERE user_id = ...`).
+- Remover o acesso não apaga a conta nem os dados do estabelecimento.
+- Exige a migração `20261109000300_find_user_by_email.sql`.
+
+**Pelo SQL Editor** (alternativa, ou se a tela não estiver disponível):
+
+```sql
+-- novo estabelecimento
+INSERT INTO public.establishments (name, slug) VALUES ('Padaria do Zé', 'padaria-do-ze');
+
+-- liberar um administrador (use o e-mail dele)
+INSERT INTO public.admins (user_id)
+SELECT id FROM auth.users WHERE email = 'pessoa@exemplo.com' ON CONFLICT DO NOTHING;
+INSERT INTO public.admin_establishments (admin_id, establishment_id)
+SELECT u.id, e.id FROM auth.users u, public.establishments e
+WHERE u.email = 'pessoa@exemplo.com' AND e.slug = 'padaria-do-ze' ON CONFLICT DO NOTHING;
+```
+
+O participante abre o estabelecimento **Padrão** em `/` e os demais em `/e/<apelido>` (o apelido é o `slug` do estabelecimento).

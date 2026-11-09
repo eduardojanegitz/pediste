@@ -6,6 +6,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { getAdminSession } from "@/lib/auth.functions";
 import { authErrorKind } from "@/lib/admin-auth";
 import { Logo } from "@/components/brand/Logo";
+import {
+  EstablishmentProvider,
+  EstablishmentSwitcher,
+} from "@/features/admin/EstablishmentProvider";
 
 export const Route = createFileRoute("/admin")({
   // O painel não precisa de SSR: a sessão vive no navegador e a guarda roda lá.
@@ -13,7 +17,7 @@ export const Route = createFileRoute("/admin")({
   ssr: false,
   head: () => ({
     meta: [
-      { title: "Painel — PedeAí!" },
+      { title: "Painel — Pediste" },
       { name: "description", content: "Gerencie produtos, rodadas e pedidos do cardápio." },
       { name: "robots", content: "noindex" },
     ],
@@ -25,7 +29,7 @@ export const Route = createFileRoute("/admin")({
     }
     try {
       const me = await getAdminSession();
-      return { adminEmail: me.email };
+      return { adminEmail: me.email, isSuper: me.isSuper, establishments: me.establishments };
     } catch (e) {
       const kind = authErrorKind(e);
       if (!kind) throw e; // falha de rede etc.: mostra a tela de erro, sem deslogar
@@ -40,11 +44,18 @@ const tabs = [
   { to: "/admin", label: "Cardápio", exact: true },
   { to: "/admin/rounds", label: "Rodadas", exact: false },
   { to: "/admin/orders", label: "Pedidos", exact: false },
+  { to: "/admin/reports", label: "Relatórios", exact: false },
   { to: "/admin/settings", label: "Ajustes", exact: false },
 ] as const;
 
+/** Abas só do super administrador (o servidor também confere; esconder aqui é só conforto). */
+const superTabs = [
+  { to: "/admin/establishments", label: "Estabelecimentos", exact: false },
+  { to: "/admin/health", label: "Saúde", exact: false },
+] as const;
+
 function AdminLayout() {
-  const { adminEmail } = Route.useRouteContext();
+  const { adminEmail, isSuper, establishments } = Route.useRouteContext();
   const router = useRouter();
   const qc = useQueryClient();
   const leaving = useRef(false);
@@ -100,20 +111,26 @@ function AdminLayout() {
           </button>
         </div>
       </header>
-      <nav aria-label="Seções do painel" className="mb-8 flex gap-2 overflow-x-auto">
-        {tabs.map((t) => (
+      <nav
+        aria-label="Seções do painel"
+        className="-mx-1 mb-6 flex gap-3 overflow-x-auto px-1 pb-2 pt-1"
+      >
+        {[...tabs, ...(isSuper ? superTabs : [])].map((t) => (
           <Link
             key={t.to}
             to={t.to}
             activeOptions={{ exact: t.exact }}
-            className="pop-press rounded-full border-2 border-foreground bg-card px-5 py-2 font-bold shadow-pop"
+            className="pop-press shrink-0 whitespace-nowrap rounded-full border-2 border-foreground bg-card px-5 py-2 font-bold shadow-pop"
             activeProps={{ className: "bg-primary text-primary-foreground" }}
           >
             {t.label}
           </Link>
         ))}
       </nav>
-      <Outlet />
+      <EstablishmentProvider establishments={establishments} isSuper={isSuper}>
+        <EstablishmentSwitcher />
+        <Outlet />
+      </EstablishmentProvider>
     </main>
   );
 }

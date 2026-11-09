@@ -13,9 +13,15 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { ConfirmDialog } from "@/features/admin/ConfirmDialog";
+import {
+  pickEstablishment,
+  readStoredEstablishment,
+  useEstablishment,
+} from "@/features/admin/establishment-context";
 import { ScheduleFields } from "@/features/admin/ScheduleFields";
 import { ShareDialog } from "@/features/admin/ShareDialog";
-import { btnPlain, btnPrimary, errMsg, field } from "@/features/admin/ui";
+import { participantPath } from "@/lib/scope";
+import { btnDark, btnPlain, btnPrimary, errMsg, field } from "@/features/admin/ui";
 import { formatSaoPaulo } from "@/lib/format";
 import {
   closeRound,
@@ -26,17 +32,21 @@ import {
   type Round,
   type RoundState,
 } from "@/lib/orders.functions";
-import { isoToSpLocal, spLocalToIso } from "@/lib/schedule";
+import { copySchedule, isoToSpLocal, spLocalToIso } from "@/lib/schedule";
 
-const roundsQuery = queryOptions({
-  queryKey: ["rounds"],
-  queryFn: () => listRounds(),
-  refetchInterval: 30_000,
-});
+const roundsQuery = (establishmentId: string) =>
+  queryOptions({
+    queryKey: ["rounds", establishmentId],
+    queryFn: () => listRounds({ data: { establishmentId } }),
+    refetchInterval: 30_000,
+  });
 
 export const Route = createFileRoute("/admin/rounds")({
-  head: () => ({ meta: [{ title: "Rodadas — PedeAí!" }, { name: "robots", content: "noindex" }] }),
-  loader: ({ context }) => context.queryClient.ensureQueryData(roundsQuery),
+  head: () => ({ meta: [{ title: "Rodadas — Pediste" }, { name: "robots", content: "noindex" }] }),
+  loader: ({ context }) => {
+    const est = pickEstablishment(context.establishments, readStoredEstablishment());
+    return est ? context.queryClient.ensureQueryData(roundsQuery(est.id)) : undefined;
+  },
   pendingComponent: () => <div className="h-40 animate-pulse rounded-3xl bg-muted" />,
   component: RoundsPage,
 });
@@ -73,7 +83,8 @@ function readSchedule(
 }
 
 function RoundsPage() {
-  const { data: rounds } = useSuspenseQuery(roundsQuery);
+  const { current: est } = useEstablishment();
+  const { data: rounds } = useSuspenseQuery(roundsQuery(est.id));
   const qc = useQueryClient();
   const reduce = useReducedMotion();
   const refresh = () => {
@@ -110,7 +121,10 @@ function RoundsPage() {
     e.preventDefault();
     const s = readSchedule(opens, closes);
     if (typeof s === "string") return void toast.error(s);
-    void run(() => open({ data: { name, schedule: s } }), "Rodada criada!").then(() => {
+    void run(
+      () => open({ data: { establishmentId: est.id, name, schedule: s } }),
+      "Rodada criada!",
+    ).then(() => {
       setName("");
       setOpens("");
       setCloses("");
@@ -128,6 +142,7 @@ function RoundsPage() {
         <CurrentRound
           key={`${current.id}-${current.opens_at}-${current.closes_at}`}
           round={current}
+          sharePath={participantPath(est)}
           busy={busy}
           reduce={reduce ?? false}
           onSave={(opensV, closesV) => {
@@ -148,6 +163,39 @@ function RoundsPage() {
             Só uma rodada pode ficar aberta por vez. Sem horários, os pedidos abrem agora e só
             encerram quando você encerrar.
           </p>
+          {rounds.length > 0 && (
+            <div>
+              <label htmlFor="r-copy" className="mb-1 block text-sm font-bold">
+                Copiar de uma rodada anterior
+              </label>
+              <select
+                id="r-copy"
+                value=""
+                onChange={(e) => {
+                  const src = rounds.find((r) => r.id === e.target.value);
+                  if (!src) return;
+                  const s = copySchedule(src);
+                  setName(src.name);
+                  setOpens(s.opens);
+                  setCloses(s.closes);
+                  toast.success(`Copiado de “${src.name}”. Confira os horários e abra.`);
+                }}
+                className={field}
+              >
+                <option value="">Escolher…</option>
+                {rounds.slice(0, 10).map((r) => (
+                  <option key={r.id} value={r.id}>
+                    {r.name}
+                    {r.closes_at ? ` · encerrava ${formatSaoPaulo(r.closes_at)}` : ""}
+                  </option>
+                ))}
+              </select>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Traz o nome e os horários para hoje (ou amanhã, se o horário de hoje já passou). O
+                cardápio é o mesmo de sempre.
+              </p>
+            </div>
+          )}
           <div>
             <label htmlFor="r-name" className="mb-1 block text-sm font-bold">
               Nome
@@ -240,8 +288,11 @@ function CurrentRound({
   onSave,
   onClose,
   onReopen,
+  sharePath,
 }: {
   round: Round;
+  /** Caminho do estabelecimento no link compartilhado ("" = padrão). */
+  sharePath: string;
   busy: boolean;
   reduce: boolean;
   onSave: (opens: string, closes: string) => void;
@@ -282,17 +333,13 @@ function CurrentRound({
               <RotateCcw className="h-4 w-4" aria-hidden /> Reabrir
             </button>
           ) : (
-            <button
-              className={`${btnPlain} bg-foreground text-background`}
-              onClick={onClose}
-              disabled={busy}
-            >
+            <button className={btnDark} onClick={onClose} disabled={busy}>
               <Lock className="h-4 w-4" aria-hidden /> Encerrar agora
             </button>
           )}
         </div>
       </div>
-      <ShareDialog open={shareOpen} onOpenChange={setShareOpen} round={round} />
+      <ShareDialog open={shareOpen} onOpenChange={setShareOpen} round={round} path={sharePath} />
       <ScheduleFields
         idPrefix="cur"
         opens={opens}

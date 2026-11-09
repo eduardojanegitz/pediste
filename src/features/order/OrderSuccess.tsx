@@ -8,6 +8,7 @@ import {
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Check, Pencil } from "lucide-react";
 import { BagBadge } from "@/components/brand/BagBadge";
+import { LogoMark } from "@/components/brand/LogoMark";
 import { PixInSuccess } from "./PixInSuccess";
 import { btnPlain, btnPrimary } from "./ui";
 import {
@@ -28,7 +29,7 @@ const BRAND = [
   "bg-secondary",
   "bg-foreground",
 ];
-const LETTERS = ["P", "e", "d", "e", "A", "í"] as const;
+const LETTERS = ["P", "e", "d", "i", "s", "t", "e"] as const;
 const PARTICLES = 26;
 
 type Particle = {
@@ -92,7 +93,7 @@ function ParticleView({ p, scene }: { p: Particle; scene: Scene }) {
 }
 
 /**
- * Conclusão do pedido (marca PedeAí!). Sequência: sacola desliza → explosão de partículas →
+ * Conclusão do pedido (marca Pediste). Sequência: sacola desliza → explosão de partículas →
  * partículas convergem e formam a marca → mensagem + resumo + ações.
  * Só é montada DEPOIS de o servidor confirmar a gravação. "updated" é a versão reduzida (sem explosão).
  * Com movimento reduzido mostra direto o estado final, sem deslocamentos.
@@ -251,12 +252,43 @@ export function OrderSuccess({
             </>
           )}
 
-          {/* Marca: letras com mola; o "!" pulsa e brilha */}
+          {/* Marca: símbolo + letras com mola */}
           <div className="absolute inset-0 grid place-items-center">
             <h1
               aria-hidden
-              className="font-display flex items-baseline text-[5.5rem] leading-none tracking-wide sm:text-[7rem]"
+              className="font-display flex items-center text-[5.5rem] leading-none tracking-wide sm:text-[7rem]"
             >
+              {/* Símbolo (P com "?") entra primeiro, pulsa e brilha */}
+              <span className="relative mr-[0.18em] inline-flex self-center">
+                {!reduce && (
+                  <motion.span
+                    className="absolute left-1/2 top-1/2 -ml-8 -mt-8 h-16 w-16 rounded-full bg-secondary/35"
+                    initial={false}
+                    animate={
+                      atLogo
+                        ? { scale: [0.6, 1.9, 0.6], opacity: [0.2, 0.6, 0.2] }
+                        : { scale: 0, opacity: 0 }
+                    }
+                    transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut", delay: 0.4 }}
+                  />
+                )}
+                <motion.span
+                  className="relative inline-flex"
+                  initial={reduce ? false : { opacity: 0, scale: 0, rotate: -35 }}
+                  animate={
+                    atLogo
+                      ? { opacity: 1, scale: 1, rotate: 0 }
+                      : { opacity: 0, scale: 0, rotate: -35 }
+                  }
+                  transition={
+                    reduce
+                      ? { duration: 0.2 }
+                      : { type: "spring", stiffness: 330, damping: 12, delay: 0 }
+                  }
+                >
+                  <LogoMark />
+                </motion.span>
+              </span>
               {LETTERS.map((l, i) => (
                 <motion.span
                   key={`${l}-${i}`}
@@ -268,42 +300,12 @@ export function OrderSuccess({
                   transition={
                     reduce
                       ? { duration: 0.2 }
-                      : { type: "spring", stiffness: 260, damping: 16, delay: i * 0.055 }
+                      : { type: "spring", stiffness: 260, damping: 16, delay: 0.25 + i * 0.055 }
                   }
                 >
                   {l}
                 </motion.span>
               ))}
-              <span className="relative inline-block">
-                {!reduce && (
-                  <motion.span
-                    className="absolute left-1/2 top-1/2 -ml-8 -mt-8 h-16 w-16 rounded-full bg-secondary/35"
-                    initial={false}
-                    animate={
-                      atLogo
-                        ? { scale: [0.6, 1.7, 0.6], opacity: [0.2, 0.6, 0.2] }
-                        : { scale: 0, opacity: 0 }
-                    }
-                    transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut", delay: 0.4 }}
-                  />
-                )}
-                <motion.span
-                  className="relative inline-block origin-bottom text-secondary"
-                  initial={reduce ? false : { opacity: 0, scale: 0, rotate: -35 }}
-                  animate={
-                    atLogo
-                      ? { opacity: 1, scale: 1, rotate: 0 }
-                      : { opacity: 0, scale: 0, rotate: -35 }
-                  }
-                  transition={
-                    reduce
-                      ? { duration: 0.2 }
-                      : { type: "spring", stiffness: 330, damping: 12, delay: 0.38 }
-                  }
-                >
-                  !
-                </motion.span>
-              </span>
             </h1>
           </div>
         </div>

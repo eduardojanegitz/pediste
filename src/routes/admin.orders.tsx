@@ -34,7 +34,13 @@ import { BoardLinkDialog } from "@/features/admin/BoardLinkDialog";
 import { ConfirmDialog } from "@/features/admin/ConfirmDialog";
 import { PrintDialog } from "@/features/admin/PrintDialog";
 import { PendingCard } from "@/features/admin/PendingCard";
+import {
+  pickEstablishment,
+  readStoredEstablishment,
+  useEstablishment,
+} from "@/features/admin/establishment-context";
 import { ShareDialog } from "@/features/admin/ShareDialog";
+import { participantPath } from "@/lib/scope";
 import {
   consolidate,
   emptyFilters,
@@ -57,11 +63,18 @@ import {
   type RoundOrder,
 } from "@/lib/orders.functions";
 
-const roundsQuery = queryOptions({ queryKey: ["rounds"], queryFn: () => listRounds() });
+const roundsQuery = (establishmentId: string) =>
+  queryOptions({
+    queryKey: ["rounds", establishmentId],
+    queryFn: () => listRounds({ data: { establishmentId } }),
+  });
 
 export const Route = createFileRoute("/admin/orders")({
-  head: () => ({ meta: [{ title: "Pedidos — PedeAí!" }, { name: "robots", content: "noindex" }] }),
-  loader: ({ context }) => context.queryClient.ensureQueryData(roundsQuery),
+  head: () => ({ meta: [{ title: "Pedidos — Pediste" }, { name: "robots", content: "noindex" }] }),
+  loader: ({ context }) => {
+    const est = pickEstablishment(context.establishments, readStoredEstablishment());
+    return est ? context.queryClient.ensureQueryData(roundsQuery(est.id)) : undefined;
+  },
   pendingComponent: () => <div className="h-40 animate-pulse rounded-3xl bg-muted" />,
   component: OrdersPage,
 });
@@ -100,7 +113,8 @@ function Tile({
 type View = "participants" | "totals";
 
 function OrdersPage() {
-  const { data: rounds } = useSuspenseQuery(roundsQuery);
+  const { current } = useEstablishment();
+  const { data: rounds } = useSuspenseQuery(roundsQuery(current.id));
   const [roundId, setRoundId] = useState<string | undefined>(
     rounds.find((r) => r.status === "open")?.id ?? rounds[0]?.id,
   );
@@ -262,7 +276,7 @@ function OrdersPage() {
         </div>
       ) : orders.length === 0 ? (
         <>
-          {round && <PendingCard round={round} />}
+          {round && <PendingCard round={round} path={participantPath(current)} />}
           <div className="pop-card p-10 text-center">
             <h2 className="text-4xl">Sem pedidos ainda</h2>
             <p className="mt-2 text-muted-foreground">Os pedidos confirmados aparecem aqui.</p>
@@ -528,7 +542,14 @@ function OrdersPage() {
         </>
       )}
 
-      {round && <ShareDialog open={shareOpen} onOpenChange={setShareOpen} round={round} />}
+      {round && (
+        <ShareDialog
+          open={shareOpen}
+          onOpenChange={setShareOpen}
+          round={round}
+          path={participantPath(current)}
+        />
+      )}
       {round && <BoardLinkDialog open={boardOpen} onOpenChange={setBoardOpen} round={round} />}
       {round && (
         <PrintDialog

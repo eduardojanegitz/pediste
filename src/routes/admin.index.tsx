@@ -7,6 +7,11 @@ import { toast } from "sonner";
 import { ArrowDown, ArrowUp, ImagePlus, Pencil, Plus, TriangleAlert, Trash2 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { CategoryDialog } from "@/features/admin/CategoryDialog";
+import {
+  pickEstablishment,
+  readStoredEstablishment,
+  useEstablishment,
+} from "@/features/admin/establishment-context";
 import { ConfirmDialog } from "@/features/admin/ConfirmDialog";
 import { ProductDialog } from "@/features/admin/ProductDialog";
 import { moveId } from "@/features/admin/reorder";
@@ -25,12 +30,16 @@ import {
 import { ruleSummary } from "@/lib/category-rules";
 import { formatBRL } from "@/lib/format";
 
-const catalogQuery = queryOptions({ queryKey: ["catalog"], queryFn: () => getCatalog() });
+const catalogQuery = (establishmentId: string) =>
+  queryOptions({
+    queryKey: ["catalog", establishmentId],
+    queryFn: () => getCatalog({ data: { establishmentId } }),
+  });
 
 export const Route = createFileRoute("/admin/")({
   head: () => ({
     meta: [
-      { title: "Cardápio — PedeAí!" },
+      { title: "Cardápio — Pediste" },
       {
         name: "description",
         content: "Gerencie categorias, produtos e regras de escolha do cardápio.",
@@ -38,7 +47,10 @@ export const Route = createFileRoute("/admin/")({
       { name: "robots", content: "noindex" },
     ],
   }),
-  loader: ({ context }) => context.queryClient.ensureQueryData(catalogQuery),
+  loader: ({ context }) => {
+    const est = pickEstablishment(context.establishments, readStoredEstablishment());
+    return est ? context.queryClient.ensureQueryData(catalogQuery(est.id)) : undefined;
+  },
   pendingComponent: AdminSkeleton,
   component: MenuAdminPage,
 });
@@ -58,7 +70,8 @@ type Pending =
   { kind: "category"; item: CatalogCategory } | { kind: "product"; item: CatalogProduct } | null;
 
 function MenuAdminPage() {
-  const { data } = useSuspenseQuery(catalogQuery);
+  const { current } = useEstablishment();
+  const { data } = useSuspenseQuery(catalogQuery(current.id));
   const qc = useQueryClient();
   const reduce = useReducedMotion();
   const refresh = () => qc.invalidateQueries({ queryKey: ["catalog"] });
@@ -348,6 +361,7 @@ function MenuAdminPage() {
       <CategoryDialog
         key={editCat === "new" ? "new" : (editCat?.id ?? "none")}
         category={editCat}
+        establishmentId={current.id}
         onClose={() => setEditCat(null)}
         onSaved={() => {
           setEditCat(null);
