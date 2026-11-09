@@ -40,6 +40,7 @@ const tabs = [
   { to: "/admin", label: "Cardápio", exact: true },
   { to: "/admin/rounds", label: "Rodadas", exact: false },
   { to: "/admin/orders", label: "Pedidos", exact: false },
+  { to: "/admin/reports", label: "Relatórios", exact: false },
   { to: "/admin/settings", label: "Ajustes", exact: false },
 ] as const;
 
