@@ -1,6 +1,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { EstablishmentProvider } from "@/features/admin/EstablishmentProvider";
 import { ReportView } from "@/features/admin/ReportView";
 import {
   byPerson,
@@ -124,7 +125,12 @@ vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 const wrap = () =>
   render(
     <QueryClientProvider client={new QueryClient()}>
-      <ReportView />
+      <EstablishmentProvider
+        establishments={[{ id: "e-1", name: "Padaria", slug: "padaria", isDefault: true }]}
+        isSuper={false}
+      >
+        <ReportView />
+      </EstablishmentProvider>
     </QueryClientProvider>,
   );
 
@@ -138,6 +144,7 @@ describe("ReportView", () => {
     getReport.mockResolvedValue({ rows: ROWS, truncated: false });
     wrap();
     expect(await screen.findByText("Por pessoa")).toBeInTheDocument();
+    expect(getReport.mock.calls[0]![0]).toMatchObject({ data: { establishmentId: "e-1" } });
     expect(screen.getByText("Por rodada")).toBeInTheDocument();
     expect(screen.getAllByRole("button", { name: /Cobrar/ })).toHaveLength(1);
     fireEvent.click(screen.getByRole("button", { name: /Cobrar/ }));

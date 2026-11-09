@@ -18,10 +18,13 @@ type Errors = Partial<Record<"name" | "description" | "min_select" | "max_select
 /** Criar/editar categoria: nome, descrição, limites de seleção, quantidade por opção e disponibilidade. */
 export function CategoryDialog({
   category,
+  establishmentId,
   onClose,
   onSaved,
 }: {
   category: CatalogCategory | "new" | null;
+  /** Estabelecimento onde a categoria nova será criada (ignorado ao editar). */
+  establishmentId?: string | undefined;
   onClose: () => void;
   onSaved: () => void;
 }) {
@@ -63,7 +66,9 @@ export function CategoryDialog({
     }
     setSaving(true);
     try {
-      await save({ data: parsed.data });
+      await save({
+        data: c || !establishmentId ? parsed.data : { ...parsed.data, establishmentId },
+      });
       toast.success(c ? "Categoria atualizada" : "Categoria criada");
       onSaved();
     } catch (err) {

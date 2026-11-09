@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/admin-middleware";
+import { assertEstablishment } from "@/lib/scope";
 import { spDayStartIso, spNextDayStartIso, validPeriod, type ReportRow } from "@/lib/report";
 
 const MAX_ROWS = 5000;
@@ -14,6 +15,7 @@ export const getReport = createServerFn({ method: "POST" })
   .validator((d: unknown) =>
     z
       .object({
+        establishmentId: z.string().uuid(),
         from: z.string(),
         to: z.string(),
       })
@@ -23,14 +25,16 @@ export const getReport = createServerFn({ method: "POST" })
       })
       .parse(d),
   )
-  .handler(async ({ data }): Promise<{ rows: ReportRow[]; truncated: boolean }> => {
+  .handler(async ({ data, context }): Promise<{ rows: ReportRow[]; truncated: boolean }> => {
+    assertEstablishment(context, data.establishmentId);
     const { supabaseAdmin: db } = await import("@/integrations/supabase/client.server");
     const { data: rows, error } = await db
       .from("orders")
       .select(
-        "id, round_id, participant_id, created_at, paid_at, rounds(name), participants(display_name, phone_e164), order_items(quantity, products(price_cents))",
+        "id, round_id, participant_id, created_at, paid_at, rounds!inner(name, establishment_id), participants(display_name, phone_e164), order_items(quantity, products(price_cents))",
       )
       .eq("status", "confirmed")
+      .eq("rounds.establishment_id", data.establishmentId)
       .gte("created_at", spDayStartIso(data.from))
       .lt("created_at", spNextDayStartIso(data.to))
       .order("created_at", { ascending: false })

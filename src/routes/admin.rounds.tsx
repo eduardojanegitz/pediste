@@ -13,6 +13,11 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { ConfirmDialog } from "@/features/admin/ConfirmDialog";
+import {
+  pickEstablishment,
+  readStoredEstablishment,
+  useEstablishment,
+} from "@/features/admin/establishment-context";
 import { ScheduleFields } from "@/features/admin/ScheduleFields";
 import { ShareDialog } from "@/features/admin/ShareDialog";
 import { btnPlain, btnPrimary, errMsg, field } from "@/features/admin/ui";
@@ -28,15 +33,19 @@ import {
 } from "@/lib/orders.functions";
 import { copySchedule, isoToSpLocal, spLocalToIso } from "@/lib/schedule";
 
-const roundsQuery = queryOptions({
-  queryKey: ["rounds"],
-  queryFn: () => listRounds(),
-  refetchInterval: 30_000,
-});
+const roundsQuery = (establishmentId: string) =>
+  queryOptions({
+    queryKey: ["rounds", establishmentId],
+    queryFn: () => listRounds({ data: { establishmentId } }),
+    refetchInterval: 30_000,
+  });
 
 export const Route = createFileRoute("/admin/rounds")({
   head: () => ({ meta: [{ title: "Rodadas — PedeAí!" }, { name: "robots", content: "noindex" }] }),
-  loader: ({ context }) => context.queryClient.ensureQueryData(roundsQuery),
+  loader: ({ context }) => {
+    const est = pickEstablishment(context.establishments, readStoredEstablishment());
+    return est ? context.queryClient.ensureQueryData(roundsQuery(est.id)) : undefined;
+  },
   pendingComponent: () => <div className="h-40 animate-pulse rounded-3xl bg-muted" />,
   component: RoundsPage,
 });
@@ -73,7 +82,8 @@ function readSchedule(
 }
 
 function RoundsPage() {
-  const { data: rounds } = useSuspenseQuery(roundsQuery);
+  const { current: est } = useEstablishment();
+  const { data: rounds } = useSuspenseQuery(roundsQuery(est.id));
   const qc = useQueryClient();
   const reduce = useReducedMotion();
   const refresh = () => {
@@ -110,7 +120,10 @@ function RoundsPage() {
     e.preventDefault();
     const s = readSchedule(opens, closes);
     if (typeof s === "string") return void toast.error(s);
-    void run(() => open({ data: { name, schedule: s } }), "Rodada criada!").then(() => {
+    void run(
+      () => open({ data: { establishmentId: est.id, name, schedule: s } }),
+      "Rodada criada!",
+    ).then(() => {
       setName("");
       setOpens("");
       setCloses("");

@@ -6,6 +6,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { getAdminSession } from "@/lib/auth.functions";
 import { authErrorKind } from "@/lib/admin-auth";
 import { Logo } from "@/components/brand/Logo";
+import {
+  EstablishmentProvider,
+  EstablishmentSwitcher,
+} from "@/features/admin/EstablishmentProvider";
 
 export const Route = createFileRoute("/admin")({
   // O painel não precisa de SSR: a sessão vive no navegador e a guarda roda lá.
@@ -25,7 +29,7 @@ export const Route = createFileRoute("/admin")({
     }
     try {
       const me = await getAdminSession();
-      return { adminEmail: me.email };
+      return { adminEmail: me.email, isSuper: me.isSuper, establishments: me.establishments };
     } catch (e) {
       const kind = authErrorKind(e);
       if (!kind) throw e; // falha de rede etc.: mostra a tela de erro, sem deslogar
@@ -45,7 +49,7 @@ const tabs = [
 ] as const;
 
 function AdminLayout() {
-  const { adminEmail } = Route.useRouteContext();
+  const { adminEmail, isSuper, establishments } = Route.useRouteContext();
   const router = useRouter();
   const qc = useQueryClient();
   const leaving = useRef(false);
@@ -114,7 +118,10 @@ function AdminLayout() {
           </Link>
         ))}
       </nav>
-      <Outlet />
+      <EstablishmentProvider establishments={establishments} isSuper={isSuper}>
+        <EstablishmentSwitcher />
+        <Outlet />
+      </EstablishmentProvider>
     </main>
   );
 }

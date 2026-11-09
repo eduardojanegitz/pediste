@@ -4,7 +4,7 @@
   "type": "module",
   "description": "Testes das migrações SQL em um Postgres local (PGlite). Não faz parte do app.",
   "scripts": {
-    "test": "node test.mjs && node notes.mjs && node pix.mjs && node board.mjs && node done.mjs"
+    "test": "node test.mjs && node notes.mjs && node pix.mjs && node board.mjs && node done.mjs && node establishments.mjs"
   },
   "dependencies": {
     "@electric-sql/pglite": "^0.5.15"

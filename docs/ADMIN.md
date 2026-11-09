@@ -22,3 +22,27 @@ Só administradores fazem login (`/admin/login`). Participantes do cardápio nã
 ## Adicionar ou remover um admin depois
 
 Crie o usuário em Authentication e inclua o `id` dele em `public.admins` (ou apague a linha para remover o acesso; a sessão dele deixa de valer no servidor imediatamente).
+
+## Estabelecimentos e quem acessa o quê
+
+Cada estabelecimento tem o seu cardápio e as suas rodadas (a migração `20261109000100_establishments.sql` cria o estabelecimento **Padrão** e põe nele tudo que já existia).
+
+- **Super administrador** (`admins.is_super = true`): vê todos os estabelecimentos. Quem já era administrador antes da migração virou super.
+- **Administrador comum**: só vê os estabelecimentos em que está vinculado (`public.admin_establishments`).
+- A conferência é feita no servidor em toda função do painel; esconder o seletor no navegador não é a proteção.
+
+Enquanto a tela de gestão não existe (próximo bloco), faça pelo SQL Editor:
+
+```sql
+-- novo estabelecimento
+INSERT INTO public.establishments (name, slug) VALUES ('Padaria do Zé', 'padaria-do-ze');
+
+-- liberar um administrador (use o e-mail dele)
+INSERT INTO public.admins (user_id)
+SELECT id FROM auth.users WHERE email = 'pessoa@exemplo.com' ON CONFLICT DO NOTHING;
+INSERT INTO public.admin_establishments (admin_id, establishment_id)
+SELECT u.id, e.id FROM auth.users u, public.establishments e
+WHERE u.email = 'pessoa@exemplo.com' AND e.slug = 'padaria-do-ze' ON CONFLICT DO NOTHING;
+```
+
+Por enquanto o participante só enxerga o estabelecimento **Padrão** (endereço `/`); os outros ficam disponíveis para o participante no próximo bloco.

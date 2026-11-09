@@ -16,6 +16,7 @@ import {
 import { exportReportExcel, exportReportPdf } from "@/lib/report-export";
 import { getReport } from "@/lib/report.functions";
 import { isoToSpLocal } from "@/lib/schedule";
+import { useEstablishment } from "./establishment-context";
 import { whatsappToLink } from "./reminder";
 import { btnPlain, btnPrimary, errMsg, field } from "./ui";
 
@@ -32,12 +33,13 @@ function Stat({ label, value }: { label: string; value: string }) {
 
 /** Relatórios: gasto por pessoa e por rodada em um período, com cobrança por WhatsApp e exportação. */
 export function ReportView() {
+  const { current } = useEstablishment();
   const options = useMemo(() => presets(todayBR()), []);
   const [period, setPeriod] = useState<Period>(options[0]!.period);
   const invalid = validPeriod(period);
   const q = useQuery({
-    queryKey: ["report", period.from, period.to],
-    queryFn: () => getReport({ data: period }),
+    queryKey: ["report", current.id, period.from, period.to],
+    queryFn: () => getReport({ data: { establishmentId: current.id, ...period } }),
     enabled: !invalid,
   });
   const rows = useMemo(() => q.data?.rows ?? [], [q.data]);
