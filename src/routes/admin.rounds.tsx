@@ -26,7 +26,7 @@ import {
   type Round,
   type RoundState,
 } from "@/lib/orders.functions";
-import { isoToSpLocal, spLocalToIso } from "@/lib/schedule";
+import { copySchedule, isoToSpLocal, spLocalToIso } from "@/lib/schedule";
 
 const roundsQuery = queryOptions({
   queryKey: ["rounds"],
@@ -148,6 +148,39 @@ function RoundsPage() {
             Só uma rodada pode ficar aberta por vez. Sem horários, os pedidos abrem agora e só
             encerram quando você encerrar.
           </p>
+          {rounds.length > 0 && (
+            <div>
+              <label htmlFor="r-copy" className="mb-1 block text-sm font-bold">
+                Copiar de uma rodada anterior
+              </label>
+              <select
+                id="r-copy"
+                value=""
+                onChange={(e) => {
+                  const src = rounds.find((r) => r.id === e.target.value);
+                  if (!src) return;
+                  const s = copySchedule(src);
+                  setName(src.name);
+                  setOpens(s.opens);
+                  setCloses(s.closes);
+                  toast.success(`Copiado de “${src.name}”. Confira os horários e abra.`);
+                }}
+                className={field}
+              >
+                <option value="">Escolher…</option>
+                {rounds.slice(0, 10).map((r) => (
+                  <option key={r.id} value={r.id}>
+                    {r.name}
+                    {r.closes_at ? ` · encerrava ${formatSaoPaulo(r.closes_at)}` : ""}
+                  </option>
+                ))}
+              </select>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Traz o nome e os horários para hoje (ou amanhã, se o horário de hoje já passou). O
+                cardápio é o mesmo de sempre.
+              </p>
+            </div>
+          )}
           <div>
             <label htmlFor="r-name" className="mb-1 block text-sm font-bold">
               Nome
