@@ -21,7 +21,7 @@ import {
 import { ScheduleFields } from "@/features/admin/ScheduleFields";
 import { ShareDialog } from "@/features/admin/ShareDialog";
 import { participantPath } from "@/lib/scope";
-import { btnPlain, btnPrimary, errMsg, field } from "@/features/admin/ui";
+import { btnDark, btnPlain, btnPrimary, errMsg, field } from "@/features/admin/ui";
 import { formatSaoPaulo } from "@/lib/format";
 import {
   closeRound,
@@ -333,11 +333,7 @@ function CurrentRound({
               <RotateCcw className="h-4 w-4" aria-hidden /> Reabrir
             </button>
           ) : (
-            <button
-              className={`${btnPlain} bg-foreground text-background`}
-              onClick={onClose}
-              disabled={busy}
-            >
+            <button className={btnDark} onClick={onClose} disabled={busy}>
               <Lock className="h-4 w-4" aria-hidden /> Encerrar agora
             </button>
           )}
