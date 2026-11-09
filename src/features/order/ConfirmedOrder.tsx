@@ -55,7 +55,11 @@ export function ConfirmedOrder({
   const noteOf = new Map(me.items.map((i) => [i.product_id, i.note]));
   const known = new Set(menu.products.map((p) => p.id));
   const gone = me.items.filter((i) => !known.has(i.product_id));
-  const total = totalCents(cart, steps);
+  // Valores do pedido já confirmado: o preço guardado nele (não muda se o produto for reajustado).
+  const priceOf = new Map(me.items.map((i) => [i.product_id, i.unit_price_cents]));
+  const total = me.items.some((i) => i.unit_price_cents != null)
+    ? me.items.reduce((s, i) => s + (i.unit_price_cents ?? 0) * i.quantity, 0)
+    : null;
 
   const doCancel = async () => {
     setBusy(true);
@@ -128,9 +132,9 @@ export function ConfirmedOrder({
                         </span>
                       )}
                     </span>
-                    {product.price_cents != null && (
+                    {priceOf.get(product.id) != null && (
                       <span className="text-sm text-muted-foreground">
-                        {formatBRL(product.price_cents * quantity)}
+                        {formatBRL((priceOf.get(product.id) ?? 0) * quantity)}
                       </span>
                     )}
                   </li>

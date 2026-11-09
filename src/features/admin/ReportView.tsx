@@ -148,8 +148,8 @@ export function ReportView() {
           </div>
           <p className="mb-3 text-sm text-muted-foreground">
             {summary.orders} pedido(s) · {summary.people} pessoa(s) · {summary.rounds} rodada(s) ·{" "}
-            {formatDateBR(period.from)} a {formatDateBR(period.to)}. Valores pelos preços atuais dos
-            produtos; itens sem preço não entram.
+            {formatDateBR(period.from)} a {formatDateBR(period.to)}. Valores pelos preços da hora do
+            pedido; itens sem preço não entram.
           </p>
           <div className="mb-5 flex flex-wrap gap-2">
             <button

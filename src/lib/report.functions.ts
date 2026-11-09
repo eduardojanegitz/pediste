@@ -31,7 +31,7 @@ export const getReport = createServerFn({ method: "POST" })
     const { data: rows, error } = await db
       .from("orders")
       .select(
-        "id, round_id, participant_id, created_at, paid_at, rounds!inner(name, establishment_id), participants(display_name, phone_e164), order_items(quantity, products(price_cents))",
+        "id, round_id, participant_id, created_at, paid_at, rounds!inner(name, establishment_id), participants(display_name, phone_e164), order_items(quantity, unit_price_cents)",
       )
       .eq("status", "confirmed")
       .eq("rounds.establishment_id", data.establishmentId)
@@ -51,14 +51,14 @@ export const getReport = createServerFn({ method: "POST" })
       paid_at: string | null;
       rounds: { name: string } | null;
       participants: { display_name: string; phone_e164: string | null } | null;
-      order_items: { quantity: number; products: { price_cents: number | null } | null }[];
+      order_items: { quantity: number; unit_price_cents: number | null }[];
     };
     const all = rows as unknown as Row[];
     const out: ReportRow[] = all.slice(0, MAX_ROWS).map((o) => {
       let total = 0;
       let priced = false;
       for (const i of o.order_items) {
-        const p = i.products?.price_cents;
+        const p = i.unit_price_cents;
         if (p != null) {
           total += p * i.quantity;
           priced = true;

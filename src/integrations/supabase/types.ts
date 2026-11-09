@@ -208,18 +208,21 @@ export type Database = {
       };
       order_items: {
         Row: {
+          unit_price_cents: number | null;
           note: string | null;
           order_id: string;
           product_id: string;
           quantity: number;
         };
         Insert: {
+          unit_price_cents?: number | null;
           note?: string | null;
           order_id: string;
           product_id: string;
           quantity: number;
         };
         Update: {
+          unit_price_cents?: number | null;
           note?: string | null;
           order_id?: string;
           product_id?: string;

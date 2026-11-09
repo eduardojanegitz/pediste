@@ -227,6 +227,8 @@ export type MyOrder = {
     quantity: number;
     product_name: string | null;
     note: string | null;
+    /** Preço unitário guardado no pedido (centavos); null = sem preço. */
+    unit_price_cents: number | null;
   }[];
 };
 
@@ -254,7 +256,9 @@ export const getMyOrder = createServerFn({ method: "POST" })
     if (!data.roundId) return { participant, has_phone, status: null, version: 0, items: [] };
     const { data: order } = await db
       .from("orders")
-      .select("id, status, version, order_items(product_id, quantity, note, products(name))")
+      .select(
+        "id, status, version, order_items(product_id, quantity, note, unit_price_cents, products(name))",
+      )
       .eq("round_id", data.roundId)
       .eq("participant_id", participant.id)
       .maybeSingle();
@@ -269,6 +273,7 @@ export const getMyOrder = createServerFn({ method: "POST" })
         quantity: i.quantity,
         product_name: i.products?.name ?? null,
         note: i.note ?? null,
+        unit_price_cents: i.unit_price_cents,
       })),
     };
   });
@@ -339,7 +344,7 @@ export const getMyPayment = createServerFn({ method: "POST" })
     if (!found) return { state: "unavailable", reason: "no_order" };
     const { data: order } = await db
       .from("orders")
-      .select("status, paid_at, updated_at, order_items(quantity, products(price_cents))")
+      .select("status, paid_at, updated_at, order_items(quantity, unit_price_cents)")
       .eq("round_id", data.roundId)
       .eq("participant_id", found.id)
       .maybeSingle();
@@ -347,11 +352,12 @@ export const getMyPayment = createServerFn({ method: "POST" })
 
     let total = 0;
     let priced = false;
+    // Preço guardado no pedido: mudar o preço do produto depois não altera o que o participante deve.
     for (const i of order.order_items as unknown as {
       quantity: number;
-      products: { price_cents: number | null } | null;
+      unit_price_cents: number | null;
     }[]) {
-      const price = i.products?.price_cents;
+      const price = i.unit_price_cents;
       if (price != null) {
         total += price * i.quantity;
         priced = true;
@@ -644,7 +650,7 @@ export const getRoundOrders = createServerFn({ method: "GET" })
     const { data: rows, error } = await db
       .from("orders")
       .select(
-        "id, created_at, updated_at, version, paid_at, done_at, participant_id, participants(display_name, phone_e164), order_items(quantity, note, product_id, products(name, price_cents, categories(name, position)))",
+        "id, created_at, updated_at, version, paid_at, done_at, participant_id, participants(display_name, phone_e164), order_items(quantity, note, product_id, unit_price_cents, products(name, categories(name, position)))",
       )
       .eq("round_id", data.roundId)
       .eq("status", "confirmed")
@@ -663,9 +669,9 @@ export const getRoundOrders = createServerFn({ method: "GET" })
         quantity: number;
         note: string | null;
         product_id: string;
+        unit_price_cents: number | null;
         products: {
           name: string;
-          price_cents: number | null;
           categories: { name: string; position: number } | null;
         } | null;
       }[];
@@ -686,7 +692,7 @@ export const getRoundOrders = createServerFn({ method: "GET" })
           product: i.products?.name ?? "Item removido",
           category: i.products?.categories?.name ?? null,
           category_position: i.products?.categories?.position ?? 9999,
-          price_cents: i.products?.price_cents ?? null,
+          price_cents: i.unit_price_cents,
           quantity: i.quantity,
           note: i.note ?? null,
         }))
